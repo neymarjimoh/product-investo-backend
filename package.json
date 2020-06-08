@@ -4,7 +4,9 @@
   "description": "An application that connects users with investors",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha --timeout 5000",
+    "start": "node index.js",
+    "devStart": "nodemon index.js"
   },
   "repository": {
     "type": "git",
@@ -14,6 +16,7 @@
     "nodejs",
     "api",
     "express",
+    "entrepreneurs",
     "investors",
     "application"
   ],
@@ -24,7 +27,17 @@
   },
   "homepage": "https://github.com/neymarjimoh/product-investo-backend#readme",
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.17.1",
-    "mongoose": "^5.9.13"
+    "helmet": "^3.22.0",
+    "mongoose": "^5.9.13",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "chai-http": "^4.3.0",
+    "dotenv": "^8.2.0",
+    "mocha": "^7.2.0",
+    "nodemon": "^2.0.4"
   }
 }
