@@ -1,24 +1,10 @@
-# product-investo-backend
+# Product Investo API
 
 ## About
-
 An application that connects users with investors
 
-## Common setup
-
-Clone the repo and install the dependencies.
-
-```bash
-git clone https://github.com/neymarjimoh/product-investo-backend.git
-cd backend
-```
-
-```bash
-npm install
-```
-
-To run locally
-
-```bash
-npm run devStart
-```
+## Getting Started
+- git clone [this repo](https://github.com/neymarjimoh/product-investo-backend.git)
+- cd product-invest-backend
+- install dependencies, `yarn or npm install`
+- Run the server `npm run dev` or `yarn dev`
