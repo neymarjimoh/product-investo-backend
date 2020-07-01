@@ -79,7 +79,7 @@ exports.activateAccount = async (req, res) => {
 			});
         }
         return res.status(statusCode.OK).json({
-            message: 'User account has been verified successfuly. You can login.'
+            message: 'User account has been verified successfully. You can login.'
         });
         // user.isVerified = true;
         // user.verificationToken = null;
@@ -112,7 +112,7 @@ exports.login = async (req, res) => {
         const isValid = await bcrypt.compare(password, user.password);
         if (!isValid) {
             return res.status(statusCode.FORBIDDEN).json({
-                message: 'Ensure you enter the right crendentials',
+                message: 'Ensure you enter the right credentials',
             });
         }
         const token = jwt.sign(

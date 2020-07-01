@@ -1,0 +1,142 @@
+openapi: 3.0.0
+info:
+  version: 1.0.1
+  title: Product Investo API documentation
+  description: Product Investo API endpoints.
+servers:
+  - url: '{protocol}://{host}:{port}/'
+    description: Development server (uses test data)
+    variables:
+      port:
+        enum:
+          - ''
+          - '4000'
+          - '4001'
+        default: ''
+      protocol:
+        enum:
+          - 'http'
+          - 'https'
+        default: 'http'
+      host:
+        enum:
+          - '127.0.0.1'
+          - 'invest.herokuapp.com'
+        default: '127.0.0.1'
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        fullName:
+          type: String
+          example: John Doe
+        email:
+          type: String
+          example: testUsername@gmail.com
+        role:
+          type: String
+          example: user
+        password:
+          type: String
+          example: AveryStrongPassword
+        isVerified:
+          type: Boolean
+          example: false
+        about:
+          type: String
+          example: Just a normal user
+        address:
+          type: String
+          example: My address 
+
+paths:
+  /api/v1/register:
+    post:
+      summary: Register User
+      description: Adds user to the users collection
+      tags:
+        - Users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName:
+                  type: String
+                  example: John Doe
+                email:
+                  type: String
+                  example: johndoe@example.com
+                role:
+                  type: String
+                  example: user
+                phoneNumber:
+                  type: String
+                  example: 254700123456
+                password:
+                  type: String
+                  example: AveryStrongPassword
+      responses:
+        201:
+          description: Account registration was successful. Please check your mail to verify your account
+        409:
+          description: User already exists
+        500:
+          description: Something went wrong. Please Try again.
+  
+  /api/v1/verify-account/:email-:token:
+    patch:
+      summary: Verify account
+      tags:
+        - Users
+      parameters:
+        - in: path
+          name: email
+          description: User email used to verify
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: token
+          description: Auth Token
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: User account has been verified successfully. You can login.
+        404:
+          description: Account ${email} doesn't exist . or ensure you enter the right url
+        500:
+          description: Something went wrong. Please Try again.
+
+  /auth/login:
+    post:
+      summary: Login Users
+      description: authenticate users into the system
+      tags:
+        - Users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: String
+                  example: testUsername@gmail.com
+                password:
+                  type: String
+                  example: AveryStrongPassword
+      responses:
+        200:
+          description: User signed in successfully
+        401:
+          description: You have to verify your account
+        403:
+          description: Ensure you enter the right credentials
+        404:
+          description: Ensure you enter the right credentials'
