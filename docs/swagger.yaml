@@ -25,9 +25,18 @@ servers:
         default: '127.0.0.1'
 
 components:
+  securitySchemes:
+    Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     User:
       type: object
+      required:
+        - fullName
+        - email
+        - password
       properties:
         fullName:
           type: String
@@ -52,7 +61,7 @@ components:
           example: My address 
 
 paths:
-  /api/v1/register:
+  /api/v1/auth/register:
     post:
       summary: Register User
       description: Adds user to the users collection
@@ -87,7 +96,7 @@ paths:
         500:
           description: Something went wrong. Please Try again.
   
-  /api/v1/verify-account/:email-:token:
+  /api/v1/auth/verify-account/:email-:token:
     patch:
       summary: Verify account
       tags:
@@ -113,7 +122,7 @@ paths:
         500:
           description: Something went wrong. Please Try again.
 
-  /auth/login:
+  /api/v1/auth/login:
     post:
       summary: Login Users
       description: authenticate users into the system
@@ -140,3 +149,695 @@ paths:
           description: Ensure you enter the right credentials
         404:
           description: Ensure you enter the right credentials'
+        500:
+          description: Something went wrong. Please Try again.
+
+  /api/v1/auth/forgot-password:
+    post:
+      summary: Password Recovery Request
+      description: sends users a password reset link via emails
+      tags:
+        - Users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: String
+                  example: testUsername@gmail.com
+      responses:
+        200:
+          description: A password reset link has been sent to ${email}
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+        404:
+          description: Sorry an Account with Email ${email} doesn't exist
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+        500:
+          description: Something went wrong. Please Try again.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+                    
+  /api/v1/auth/reset-password/:token:
+    post:
+      summary: Resets password
+      tags:
+        - Users
+      parameters:
+        - in: path
+          name: token
+          description: Auth Token
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: String
+                  example: AveryStrongPassword
+      responses:
+        200:
+          description: Password updated successfully. You may login
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+        404:
+          description: Password reset token is invalid or has expired.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+        500:
+          description: Something went wrong. Please Try again.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+
+  /api/v1/auth/change-password:
+    post:
+      summary: Changes password by already logged-in users
+      tags:
+        - Users
+      security:
+        - Bearer: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                oldPassword:
+                  type: String
+                  example: AveryStrongPassword  
+                newPassword:
+                  type: String
+                  example: AveryStrongPassword      
+      responses:
+        200:
+          description: Password update was successful
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - data
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+        401:
+          description: Make sure you're logged in
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+        403:
+          description: Ensure you enter the right credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+        500:
+          description: Something went wrong. Please Try again.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+        
+  /api/v1/users:
+    get:
+      summary: Gets all users on the platform
+      tags:
+        - Users
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: Users found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                  - data
+                properties:
+                  status:
+                    type: string
+                  message: 
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/User"
+        412:
+          description: Access denied!! Missing authorization credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: boolean
+                  message: 
+                    type: string
+        401:
+          description: You must be logged in..
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+        500:
+          description: Something went wrong. Please Try again.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+
+  /api/v1/users/:userId:
+    get:
+      summary: Gets a user 
+      tags:
+        - Users
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          name: userId
+          description: User unique ID
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: User found 
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                  - data
+                properties:
+                  status:
+                    type: string
+                  message: 
+                    type: string
+                  data:
+                    type: object
+        412:
+          description: Access denied!! Missing authorization credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: boolean
+                  message: 
+                    type: string
+        422:
+          description: Ensure you enter a valid USER ID
+          content:
+            application/json:
+              schema:
+                type: object
+                required: 
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+        401:
+          description: You must be logged in..
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+        404:
+          description: User with the ID ${userId} doesn't exist or has been deleted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+        500:
+          description: Something went wrong. Please Try again.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+
+    put:
+      summary: Update User Account/profile
+      tags:
+        - Users
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          name: userId
+          description: User unique ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                address:
+                  type: String
+                  example: YourHomeAddress
+                about:
+                  type: String
+                  example: I am a tailor with ....
+                phoneNumber:
+                  type: String
+                  example: +2349070822819
+                  format: Country-Code
+                fullName:
+                  type: string
+                  example: Nicanor Jimoh Neymar
+                image:
+                  type: string
+                  format: image
+      responses:
+        200:
+          description: User updated successfully 
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                  message: 
+                    type: string
+        412:
+          description: Access denied!! Missing authorization credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: boolean
+                  message: 
+                    type: string
+        422:
+          description: Ensure you enter a valid USER ID
+          content:
+            application/json:
+              schema:
+                type: object
+                required: 
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+        401:
+          description: You must be logged in..
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+        403:
+          description: Unathorised, you can only update your account
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  message:
+                    type: string
+                  status:
+                    type: string
+        404:
+          description: Make sure you're logged in
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+        500:
+          description: Something went wrong. Please Try again.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+
+    delete:
+      summary: Deletes a user account
+      tags:
+        - Users
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          name: userId
+          description: User unique ID
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Account deleted successfully 
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                  message: 
+                    type: string
+        412:
+          description: Access denied!! Missing authorization credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: boolean
+                  message: 
+                    type: string
+        422:
+          description: Ensure your ID is a valid ID
+          content:
+            application/json:
+              schema:
+                type: object
+                required: 
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+        401:
+          description: You must be logged in..
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+        403:
+          description: Unathorised, you can only delete your account
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  message:
+                    type: string
+                  status:
+                    type: string
+        404:
+          description: User does not exist or has been deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+        500:
+          description: Something went wrong. Please Try again.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+
+  /api/v1/users/search/:name:
+    get:
+      summary: Searches for users by their names
+      tags:
+        - Users
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          name: name
+          description: User name from fullName
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: ${users.length} Users found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - users
+                properties:
+                  message:
+                    type: string
+                  users:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/User"
+        404:
+          description: ${name} does not exist
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+        412:
+          description: Access denied!! Missing authorization credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: boolean
+                  message: 
+                    type: string
+        401:
+          description: You must be logged in..
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+        500:
+          description: Something went wrong. Please Try again.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+
