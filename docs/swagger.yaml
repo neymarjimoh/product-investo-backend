@@ -25,6 +25,69 @@ servers:
         default: '127.0.0.1'
 
 components:
+  errors:
+    properties:
+      internalServerError:
+        description: Something went wrong. Please Try again.
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+                - message
+              properties:
+                status:
+                  type: string
+                message:
+                  type: string
+      invalidIdError:
+        description: Ensure you enter a valid USER ID
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+                - message
+              properties:
+                status:
+                  type: string
+                message:
+                  type: string
+      notFoundError:
+        application/json:
+          schema:
+            type: object
+            required:
+              - status
+              - message
+            properties:
+              status:
+                type: string
+              message:
+                type: string
+      authLoginError:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              message:
+                type: string
+      MissingAuthError:
+        application/json:
+          schema:
+            type: object
+            required:
+              - error
+              - message
+            properties:
+              error:
+                type: boolean
+              message: 
+                type: string
   securitySchemes:
     Bearer:
       type: http
@@ -58,8 +121,42 @@ components:
           example: Just a normal user
         address:
           type: String
-          example: My address 
-
+          example: My address
+  responses:
+    SuccessResponse:
+      application/json:
+        schema:
+          type: object
+          required:
+            - status
+            - message
+          properties:
+            status:
+              type: string
+            message:
+              type: string
+  parameters:
+    bearerToken:
+      in: path
+      name: Bearer Token
+      description: Authentication token 
+      required: true
+      schema:
+        type: string
+    tokenParams:
+      in: path
+      name: token
+      description: Auth Token
+      required: true
+      schema:
+        type: string
+    userId:
+      in: path
+      name: userId
+      description: User unique ID
+      required: true
+      schema:
+        type: string
 paths:
   /api/v1/auth/register:
     post:
@@ -72,6 +169,11 @@ paths:
           application/json:
             schema:
               type: object
+              required: 
+                - fullName
+                - email
+                - phoneNumber
+                - password
               properties:
                 fullName:
                   type: String
@@ -84,7 +186,7 @@ paths:
                   example: user
                 phoneNumber:
                   type: String
-                  example: 254700123456
+                  example: "+254700123456"
                 password:
                   type: String
                   example: AveryStrongPassword
@@ -109,11 +211,7 @@ paths:
           schema:
             type: string
         - in: path
-          name: token
-          description: Auth Token
-          required: true
-          schema:
-            type: string
+          $ref: "#/components/parameters/tokenParams"
       responses:
         200:
           description: User account has been verified successfully. You can login.
@@ -171,45 +269,13 @@ paths:
         200:
           description: A password reset link has been sent to ${email}
           content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - status
-                  - message
-                properties:
-                  status:
-                    type: string
-                  message:
-                    type: string
+            $ref: "#/components/responses/SuccessResponse"
         404:
           description: Sorry an Account with Email ${email} doesn't exist
           content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - status
-                  - message
-                properties:
-                  status:
-                    type: string
-                  message:
-                    type: string
+            $ref: "#/components/errors/properties/notFoundError"
         500:
-          description: Something went wrong. Please Try again.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - status
-                  - message
-                properties:
-                  status:
-                    type: string
-                  message:
-                    type: string
+          $ref: '#/components/errors/properties/internalServerError'
                     
   /api/v1/auth/reset-password/:token:
     post:
@@ -218,11 +284,7 @@ paths:
         - Users
       parameters:
         - in: path
-          name: token
-          description: Auth Token
-          required: true
-          schema:
-            type: string
+          $ref: "#/components/parameters/tokenParams"
       requestBody:
         content:
           application/json:
@@ -236,45 +298,13 @@ paths:
         200:
           description: Password updated successfully. You may login
           content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - status
-                  - message
-                properties:
-                  status:
-                    type: string
-                  message:
-                    type: string
+            $ref: "#/components/responses/SuccessResponse"
         404:
           description: Password reset token is invalid or has expired.
           content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - status
-                  - message
-                properties:
-                  status:
-                    type: string
-                  message:
-                    type: string
+            $ref: "#/components/errors/properties/notFoundError"
         500:
-          description: Something went wrong. Please Try again.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - status
-                  - message
-                properties:
-                  status:
-                    type: string
-                  message:
-                    type: string
+          $ref: '#/components/errors/properties/internalServerError'
 
   /api/v1/auth/change-password:
     post:
@@ -283,6 +313,9 @@ paths:
         - Users
       security:
         - Bearer: []
+      parameters:
+        - in: path
+          $ref: "#/components/parameters/bearerToken"
       requestBody:
         content:
           application/json:
@@ -313,14 +346,7 @@ paths:
         401:
           description: Make sure you're logged in
           content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - message
-                properties:
-                  message:
-                    type: string
+            $ref: "#/components/errors/properties/authLoginError"
         403:
           description: Ensure you enter the right credentials
           content:
@@ -333,19 +359,7 @@ paths:
                   message:
                     type: string
         500:
-          description: Something went wrong. Please Try again.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - status
-                  - message
-                properties:
-                  status:
-                    type: string
-                  message:
-                    type: string
+          $ref: '#/components/errors/properties/internalServerError'
         
   /api/v1/users:
     get:
@@ -354,6 +368,9 @@ paths:
         - Users
       security:
         - Bearer: []
+      parameters:
+        - in: path
+          $ref: "#/components/parameters/bearerToken"
       responses:
         200:
           description: Users found
@@ -377,42 +394,13 @@ paths:
         412:
           description: Access denied!! Missing authorization credentials
           content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - error
-                  - message
-                properties:
-                  error:
-                    type: boolean
-                  message: 
-                    type: string
+            $ref: "#/components/errors/properties/MissingAuthError"
         401:
           description: You must be logged in..
           content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - message
-                properties:
-                  message:
-                    type: string
+            $ref: "#/components/errors/properties/authLoginError"
         500:
-          description: Something went wrong. Please Try again.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - status
-                  - message
-                properties:
-                  status:
-                    type: string
-                  message:
-                    type: string
+          $ref: '#/components/errors/properties/internalServerError'
 
   /api/v1/users/:userId:
     get:
@@ -423,11 +411,9 @@ paths:
         - Bearer: []
       parameters:
         - in: path
-          name: userId
-          description: User unique ID
-          required: true
-          schema:
-            type: string
+          $ref: "#/components/parameters/userId"
+        - in: path
+          $ref: "#/components/parameters/bearerToken"
       responses:
         200:
           description: User found 
@@ -446,73 +432,23 @@ paths:
                     type: string
                   data:
                     type: object
+                    $ref: "#/components/schemas/User"
         412:
           description: Access denied!! Missing authorization credentials
           content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - error
-                  - message
-                properties:
-                  error:
-                    type: boolean
-                  message: 
-                    type: string
+            $ref: "#/components/errors/properties/MissingAuthError"
         422:
-          description: Ensure you enter a valid USER ID
-          content:
-            application/json:
-              schema:
-                type: object
-                required: 
-                  - status
-                  - message
-                properties:
-                  status:
-                    type: string
-                  message:
-                    type: string
+          $ref: "#/components/errors/properties/invalidIdError"
         401:
           description: You must be logged in..
           content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - message
-                properties:
-                  message:
-                    type: string
+            $ref: "#/components/errors/properties/authLoginError"
         404:
           description: User with the ID ${userId} doesn't exist or has been deleted.
           content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - status
-                  - message
-                properties:
-                  status:
-                    type: string
-                  message:
-                    type: string
+            $ref: "#/components/errors/properties/notFoundError"
         500:
-          description: Something went wrong. Please Try again.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - status
-                  - message
-                properties:
-                  status:
-                    type: string
-                  message:
-                    type: string
+          $ref: '#/components/errors/properties/internalServerError'
 
     put:
       summary: Update User Account/profile
@@ -522,11 +458,9 @@ paths:
         - Bearer: []
       parameters:
         - in: path
-          name: userId
-          description: User unique ID
-          required: true
-          schema:
-            type: string
+          $ref: "#/components/parameters/userId"
+        - in: path
+          $ref: "#/components/parameters/bearerToken"
       requestBody:
         content:
           application/json:
@@ -553,56 +487,17 @@ paths:
         200:
           description: User updated successfully 
           content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - status
-                  - message
-                properties:
-                  status:
-                    type: string
-                  message: 
-                    type: string
+            $ref: "#/components/responses/SuccessResponse"
         412:
           description: Access denied!! Missing authorization credentials
           content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - error
-                  - message
-                properties:
-                  error:
-                    type: boolean
-                  message: 
-                    type: string
+            $ref: "#/components/errors/properties/MissingAuthError"
         422:
-          description: Ensure you enter a valid USER ID
-          content:
-            application/json:
-              schema:
-                type: object
-                required: 
-                  - status
-                  - message
-                properties:
-                  status:
-                    type: string
-                  message:
-                    type: string
+          $ref: "#/components/errors/properties/invalidIdError"
         401:
           description: You must be logged in..
           content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - message
-                properties:
-                  message:
-                    type: string
+            $ref: "#/components/errors/properties/authLoginError"
         403:
           description: Unathorised, you can only update your account
           content:
@@ -620,31 +515,9 @@ paths:
         404:
           description: Make sure you're logged in
           content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - status
-                  - message
-                properties:
-                  status:
-                    type: string
-                  message:
-                    type: string
+            $ref: "#/components/errors/properties/notFoundError"
         500:
-          description: Something went wrong. Please Try again.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - status
-                  - message
-                properties:
-                  status:
-                    type: string
-                  message:
-                    type: string
+          $ref: '#/components/errors/properties/internalServerError'
 
     delete:
       summary: Deletes a user account
@@ -654,65 +527,24 @@ paths:
         - Bearer: []
       parameters:
         - in: path
-          name: userId
-          description: User unique ID
-          required: true
-          schema:
-            type: string
+          $ref: "#/components/parameters/userId"
+        - in: path
+          $ref: "#/components/parameters/bearerToken"
       responses:
         200:
           description: Account deleted successfully 
           content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - status
-                  - message
-                properties:
-                  status:
-                    type: string
-                  message: 
-                    type: string
+            $ref: "#/components/responses/SuccessResponse"
         412:
           description: Access denied!! Missing authorization credentials
           content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - error
-                  - message
-                properties:
-                  error:
-                    type: boolean
-                  message: 
-                    type: string
+            $ref: "#/components/errors/properties/MissingAuthError"
         422:
-          description: Ensure your ID is a valid ID
-          content:
-            application/json:
-              schema:
-                type: object
-                required: 
-                  - status
-                  - message
-                properties:
-                  status:
-                    type: string
-                  message:
-                    type: string
+          $ref: "#/components/errors/properties/invalidIdError"
         401:
           description: You must be logged in..
           content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - message
-                properties:
-                  message:
-                    type: string
+            $ref: "#/components/errors/properties/authLoginError"
         403:
           description: Unathorised, you can only delete your account
           content:
@@ -730,31 +562,9 @@ paths:
         404:
           description: User does not exist or has been deleted
           content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - status
-                  - message
-                properties:
-                  status:
-                    type: string
-                  message:
-                    type: string
+            $ref: "#/components/errors/properties/notFoundError"
         500:
-          description: Something went wrong. Please Try again.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - status
-                  - message
-                properties:
-                  status:
-                    type: string
-                  message:
-                    type: string
+          $ref: '#/components/errors/properties/internalServerError'
 
   /api/v1/users/search/:name:
     get:
@@ -770,6 +580,8 @@ paths:
           required: true
           schema:
             type: string
+        - in: path
+          $ref: "#/components/parameters/bearerToken"
       responses:
         200:
           description: ${users.length} Users found
@@ -790,54 +602,14 @@ paths:
         404:
           description: ${name} does not exist
           content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - status
-                  - message
-                properties:
-                  status:
-                    type: string
-                  message:
-                    type: string
+            $ref: "#/components/errors/properties/notFoundError"
         412:
           description: Access denied!! Missing authorization credentials
           content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - error
-                  - message
-                properties:
-                  error:
-                    type: boolean
-                  message: 
-                    type: string
+            $ref: "#/components/errors/properties/MissingAuthError"
         401:
           description: You must be logged in..
           content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - message
-                properties:
-                  message:
-                    type: string
+            $ref: "#/components/errors/properties/authLoginError"
         500:
-          description: Something went wrong. Please Try again.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - status
-                  - message
-                properties:
-                  status:
-                    type: string
-                  message:
-                    type: string
-
+          $ref: '#/components/errors/properties/internalServerError'

@@ -9,7 +9,7 @@ const config = require('../config/index');
 
 exports.register = async (req, res) => {
     const { email, password, phoneNumber, fullName } = req.body;
-    const image = req.file.path;
+    const image = req.file && req.file.path;
     try {
         const userExists = await User.findOne({ email });
         if (userExists) {
