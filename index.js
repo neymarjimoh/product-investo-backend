@@ -9,6 +9,11 @@ const userRoutes = require('./routes/user.route');
 const { storage, fileFilter } = require('./utils/multer');
 const multer = require('multer');
 const checkAuth = require('./middlewares/checkAuth');
+const YAML=require("yamljs")
+const swaggerUi=require("swagger-ui-express")
+
+const swaggerDocument = YAML.load('docs/swagger.yaml');
+
 //load the database
 mongoDbConnection();
 
@@ -30,6 +35,8 @@ app.use(checkAuth); // use the authentication middleware
 app.get('/', (req, res) => {
 	res.send('Server working 🔥');
 });
+
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
