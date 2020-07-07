@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const config = require('../config');
 
 // middleware to authenticate users accessing secure routes 
-module.exports = (req, res, next) => {
+const checkAuth = (req, res, next) => {
     if (!routes.secureRoutes.includes(req.path)) {
         return next();
     } else {
@@ -32,4 +32,8 @@ module.exports = (req, res, next) => {
 			});
         }
     }
+};
+
+module.exports = {
+    checkAuth
 };

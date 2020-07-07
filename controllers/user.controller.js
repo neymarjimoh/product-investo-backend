@@ -26,8 +26,8 @@ exports.getSingleUser = async (req, res) => {
         const { userId } = req.params;
         const user = await User.findById(userId);
         if (!mongoose.Types.ObjectId.isValid(userId)) {
-            return res.status(statusCode.NO_CONTENT).json({
-                status: `${statusCode.NO_CONTENT} Error`,
+            return res.status(422).json({
+                status: `422 Error`,
                 message: 'Ensure you enter a valid USER ID'
             });
         }
@@ -118,8 +118,8 @@ exports.deleteUser = async (req, res) => {
     try {
         const user = await User.findByIdAndDelete(id);
         if (!user) {
-            return res.status(statusCode.NO_CONTENT).json({
-                status: `${statusCode.NO_CONTENT} Error`,
+            return res.status(statusCode.NOT_FOUND).json({
+                status: `${statusCode.NOT_FOUND} Error`,
                 message: 'User does not exist or has been deleted'
             });
         }
