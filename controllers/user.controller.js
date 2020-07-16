@@ -49,6 +49,12 @@ exports.getSingleUser = async (req, res) => {
         });
     } catch (error) {
         console.log('Error from getting user >>>> \n ', error);
+        if (error.name === 'CastError') {
+            return res.status(422).json({
+                status: `422 Error`,
+                message: 'Ensure you enter a valid USER ID'
+            });
+        }
         return res.status(statusCode.INTERNAL_SERVER_ERROR).json({
             status: `${statusCode.INTERNAL_SERVER_ERROR} Error`,
             message: 'Something went wrong. Try again'

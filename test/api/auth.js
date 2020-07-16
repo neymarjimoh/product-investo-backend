@@ -15,20 +15,17 @@ describe('##USER AUTH', function () {
     });
     
     describe('=== User Registration ===', function () {
-        it('should register a user', function (done) {
-            chai.request(app)
+        it('should register a user', async function () {
+            const res = await chai.request(app)
                 .post('/api/v1/auth/register')
                 .send({
                     email: "test@gmail.com", 
                     password: "123456789", 
                     phoneNumber: "+2349070822819", 
-                    fullName: "Nerymar Junior"
-                })
-                .end((err, res) => {
-                    expect(res.status).to.equal(201);
-                    expect(res.body.message).to.equal('Account registration was successful. Please check your mail to verify your account');  
-                    done();     
+                    fullName: "Nerymar Junior",
                 });
+            expect(res.status).to.equal(201);
+            expect(res.body.message).to.equal('Account registration was successful. Please check your mail to verify your account');
         });
         
         it('should not register a user without required fields (email, password)', function (done) {

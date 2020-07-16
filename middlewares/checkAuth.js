@@ -27,6 +27,11 @@ const checkAuth = (req, res, next) => {
             return next();
         } catch (error) {
             console.log("Error from user authentication >>>>> ", error);
+            if (error.name === 'TokenExpiredError') {
+                return res.status(401).json({
+                    message: 'Token has expired.'
+                }); 
+            }
 			return res.status(401).json({
 				message: 'You must be logged in..'
 			});
