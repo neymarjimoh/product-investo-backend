@@ -8,7 +8,7 @@ const authRoutes = require('./routes/auth.route');
 const userRoutes = require('./routes/user.route');
 const { storage, fileFilter } = require('./utils/multer');
 const multer = require('multer');
-const checkAuth = require('./middlewares/checkAuth');
+const { checkAuth } = require('./middlewares/checkAuth');
 const YAML=require("yamljs")
 const swaggerUi=require("swagger-ui-express")
 
@@ -64,3 +64,5 @@ const PORT = config.PORT;
 app.listen(PORT, () => {
 	console.log(`Server running on port ${PORT} 🔥`);
 });
+
+module.exports = app;

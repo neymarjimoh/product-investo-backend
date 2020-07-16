@@ -4,14 +4,19 @@ const mongoose = require('mongoose');
 
 exports.getAllUsers = async (req, res) => {
     try {
-        const users = await User.find()
-            .select("-password -expireToken -verificationToken resetToken -role")
-            .sort({ createdAt: -1 });
-        return res.status(statusCode.OK).json({
-            status: `${statusCode.OK} Success`,
-            message: `${users.length > 1 ? users.length `Users` : users.length `User`} found`,
+        const users = await User.find({});
+        if (users.length === 0) {
+            return res.status(404).json({
+                status: "404 Error",
+                message: "No users available"
+            });
+        }
+        return res.status(200).json({
+            status: "200 Success",
+            message: `${users.length} ${users.length > 1 ? `Users`: `User`} found`,
             data: users
         });
+
     } catch (error) {
         console.log('Error from getting all users >>>> \n ', error);
         return res.status(statusCode.INTERNAL_SERVER_ERROR).json({
@@ -44,6 +49,12 @@ exports.getSingleUser = async (req, res) => {
         });
     } catch (error) {
         console.log('Error from getting user >>>> \n ', error);
+        if (error.name === 'CastError') {
+            return res.status(422).json({
+                status: `422 Error`,
+                message: 'Ensure you enter a valid USER ID'
+            });
+        }
         return res.status(statusCode.INTERNAL_SERVER_ERROR).json({
             status: `${statusCode.INTERNAL_SERVER_ERROR} Error`,
             message: 'Something went wrong. Try again'

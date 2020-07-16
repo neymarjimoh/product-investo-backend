@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const config = require('../config');
 
 // middleware to authenticate users accessing secure routes 
-module.exports = (req, res, next) => {
+const checkAuth = (req, res, next) => {
     if (!routes.secureRoutes.includes(req.path)) {
         return next();
     } else {
@@ -27,9 +27,18 @@ module.exports = (req, res, next) => {
             return next();
         } catch (error) {
             console.log("Error from user authentication >>>>> ", error);
+            if (error.name === 'TokenExpiredError') {
+                return res.status(401).json({
+                    message: 'Token has expired.'
+                }); 
+            }
 			return res.status(401).json({
 				message: 'You must be logged in..'
 			});
         }
     }
+};
+
+module.exports = {
+    checkAuth
 };
