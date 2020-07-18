@@ -3,6 +3,9 @@ node_js:
     - "12"
 services:
     - mongodb
+env:
+    - DB=mongodb
+    - TEST_MONGO_DBURI=mongodb://127.0.0.1:27017/product-investo-test
 cache:
     directories:
         - "node_modules"
