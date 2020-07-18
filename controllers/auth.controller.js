@@ -1,3 +1,4 @@
+require('dotenv').config();
 const { User } = require('../models');
 const statusCode = require('http-status');
 const bcrypt = require('bcryptjs');
@@ -29,23 +30,25 @@ exports.register = async (req, res) => {
         });
         const savedUser = await user.save();
         const verifyUrl = `http://${req.headers.host}/api/v1/auth/verify-account/${savedUser.email}-${generatedToken}`;
-        await sendMail(
-            'no-reply@product-investo.com',
-            savedUser.email, 
-            'Product-Investo Registration',
-            `
-                <h2 style="display: flex; align-items: center;">Welcome to Product-Investo</h2>
-                <p>Hello ${savedUser.email}, </p>
-                <p>Thank you for registering on <b><span style="color: red;">Product-Investo</span></b>.</p>
-                <p>You can verify your account using this <a href=${verifyUrl}>link</a></p>
-                <br>
-                <p>For more enquiries, contact us via this <a href="mailto: ${config.EMAIL_ADDRESS}">account</a></p>
-                <p>You can call us on <b>+1234568000</b></p>
-                <br>
-                <br>
-                <p>Best Regards, <b><span style="color: red;">Product-Investo</span></b>Team</p>
-            `
-        );
+        if (process.env.NODE_ENV !== 'test'){
+            sendMail(
+                'no-reply@product-investo.com',
+                savedUser.email, 
+                'Product-Investo Registration',
+                `
+                    <h2 style="display: flex; align-items: center;">Welcome to Product-Investo</h2>
+                    <p>Hello ${savedUser.email}, </p>
+                    <p>Thank you for registering on <b><span style="color: red;">Product-Investo</span></b>.</p>
+                    <p>You can verify your account using this <a href=${verifyUrl}>link</a></p>
+                    <br>
+                    <p>For more enquiries, contact us via this <a href="mailto: ${config.EMAIL_ADDRESS}">account</a></p>
+                    <p>You can call us on <b>+1234568000</b></p>
+                    <br>
+                    <br>
+                    <p>Best Regards, <b><span style="color: red;">Product-Investo</span></b>Team</p>
+                `
+            );   
+        }
         return res.status(statusCode.CREATED).json({
             message: 'Account registration was successful. Please check your mail to verify your account',
         });
