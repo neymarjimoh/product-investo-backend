@@ -75,7 +75,8 @@ describe('##USER AUTH', function () {
                 password: bcrypt.hashSync("123456789", 10),
                 phoneNumber: "+2348036695956",
                 fullName: "Lionel Messi",
-                isVerified: true
+                isVerified: true,
+                role: "user",
             });
             user.isVerified = true;
             user.save()

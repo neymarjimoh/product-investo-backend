@@ -60,7 +60,7 @@ describe('## USERS', function () {
                 .get('/api/v1/users')
                 .set("Authorization", `Bearer ${authToken}`)
             expect(res.status).to.equal(401);
-            expect(res.body).to.have.property("message", "Token has expired.");
+            expect(res.body).to.have.property("message");
         });
         
     });
