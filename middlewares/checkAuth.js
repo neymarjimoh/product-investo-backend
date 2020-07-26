@@ -1,7 +1,8 @@
+require('dotenv').config();
 const routes = require('../constants/routesGroup');
 const jwt = require('jsonwebtoken');
 const config = require('../config');
-
+let decoded;
 // middleware to authenticate users accessing secure routes 
 const checkAuth = (req, res, next) => {
     if (!routes.secureRoutes.includes(req.path)) {
@@ -22,7 +23,11 @@ const checkAuth = (req, res, next) => {
         }
         
         try {
-            const decoded = jwt.verify(token, config.JWT_SECRET);
+            if (process.env.NODE_ENV === 'test') {
+                decoded = jwt.verify(token, "token-secret");
+            } else {
+                decoded = jwt.verify(token, config.JWT_SECRET);
+            }
             req.user = decoded;
             return next();
         } catch (error) {

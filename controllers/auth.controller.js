@@ -97,6 +97,7 @@ exports.activateAccount = async (req, res) => {
 };
 
 exports.login = async (req, res) => {
+    let token;
     const { email, password } = req.body;
     try {
         const user = await User.findOne({ email });
@@ -118,17 +119,32 @@ exports.login = async (req, res) => {
                 message: 'Ensure you enter the right credentials',
             });
         }
-        const token = jwt.sign(
-            {
-                email: user.email,
-                userId: user._id,
-                role: user.role,
-            },
-            config.JWT_SECRET,
-            {
-                expiresIn: '1d'
-            }
-        );
+        if (process.env.NODE_ENV === 'test') {
+            token = jwt.sign(
+                {
+                    email: user.email,
+                    userId: user._id,
+                    role: user.role,
+                },
+                "token-secret",
+                {
+                    expiresIn: '1d'
+                }
+            );
+    
+        } else {
+            token = jwt.sign(
+                {
+                    email: user.email,
+                    userId: user._id,
+                    role: user.role,
+                },
+                config.JWT_SECRET,
+                {
+                    expiresIn: '1d'
+                }
+            );    
+        }
         return res.status(statusCode.OK).json({
             status: `${statusCode.OK} Success`,
             message: "User signed in successfully",
