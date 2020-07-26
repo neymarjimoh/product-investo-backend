@@ -4,7 +4,6 @@ node_js:
 services:
     - mongodb
 # env:
-#     - DB=mongodb
 #     - TEST_MONGO_DBURI=mongodb://127.0.0.1:27017/product-investo-test
 #     - PORT=8000
 #     - JWT_SECRET="accesssmetst6667hjjsbfdxgcghvsdlknsdknbkjjknkcsazbcoeuw96"
@@ -12,10 +11,11 @@ services:
 #     directories:
 #         - "node_modules"
 #     yarn: true
+
 # command to install dependencies
 install:
-    - yarn
-  
+  - yarn
+
 # Run tests
 script:
-    - yarn test
+   - yarn test
