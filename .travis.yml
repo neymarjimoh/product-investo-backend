@@ -3,12 +3,19 @@ node_js:
     - "12"
 services:
     - mongodb
-env:
-    - DB=mongodb
-    - TEST_MONGO_DBURI=mongodb://127.0.0.1:27017/product-investo-test
-    - PORT=8000
-    - JWT_SECRET="accesssmetst6667hjjsbfdxgcghvsdlknsdknbkjjknkcsazbcoeuw96"
-cache:
-    directories:
-        - "node_modules"
-    yarn: true
+# env:
+#     - DB=mongodb
+#     - TEST_MONGO_DBURI=mongodb://127.0.0.1:27017/product-investo-test
+#     - PORT=8000
+#     - JWT_SECRET="accesssmetst6667hjjsbfdxgcghvsdlknsdknbkjjknkcsazbcoeuw96"
+# cache:
+#     directories:
+#         - "node_modules"
+#     yarn: true
+# command to install dependencies
+install:
+    - yarn
+  
+# Run tests
+script:
+    - yarn test
