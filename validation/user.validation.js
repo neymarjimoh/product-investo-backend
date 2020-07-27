@@ -1,4 +1,4 @@
-const { body, check, validationResult } = require('express-validator');
+const { body, check, param, validationResult } = require('express-validator');
 const userProfileUpdate = () => {
 	return [
 		check('email')
@@ -9,6 +9,12 @@ const userProfileUpdate = () => {
             .withMessage('You have to request for change of password')
 			.isLength({ max: 0 })
 			.withMessage('Password can\'t be updated from here'),
+	];
+};
+
+const getUserById = () => {
+	return [
+		param('userId', 'Ensure you enter a valid USER ID').isMongoId(),
 	];
 };
 
@@ -27,5 +33,6 @@ const validate = (req, res, next) => {
 
 module.exports = {
 	userProfileUpdate,
+	getUserById,
 	validate,
 };

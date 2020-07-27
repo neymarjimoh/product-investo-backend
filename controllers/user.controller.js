@@ -30,12 +30,12 @@ exports.getSingleUser = async (req, res) => {
     try {
         const { userId } = req.params;
         const user = await User.findById(userId);
-        if (!mongoose.Types.ObjectId.isValid(userId)) {
-            return res.status(422).json({
-                status: `422 Error`,
-                message: 'Ensure you enter a valid USER ID'
-            });
-        }
+        // if (!mongoose.Types.ObjectId.isValid(userId)) {
+        //     return res.status(422).json({
+        //         status: `422 Error`,
+        //         message: 'Ensure you enter a valid USER ID'
+        //     });
+        // }
         if (!user) {
             return res.status(statusCode.NOT_FOUND).json({
                 status: `${statusCode.NOT_FOUND} Error`,

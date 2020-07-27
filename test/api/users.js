@@ -79,10 +79,9 @@ describe('## USERS', function () {
         
         it('should return 422 Error with invalid userId', async () => {
             const res = await chai.request(app)
-                .get(`/api/v1/users/12345gdsftADtsWDxg`)
+                .get(`/api/v1/users/abcd`)
                 .set("Authorization", `Bearer ${bearerToken}`);
             expect(res.status).to.equal(422);
-            expect(res.body.status).to.equal("422 Error");
         });
 
         it('should return 404 Error if userId does not exist', async () => {

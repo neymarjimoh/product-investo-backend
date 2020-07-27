@@ -2,7 +2,7 @@ require('dotenv').config();
 const routes = require('../constants/routesGroup');
 const jwt = require('jsonwebtoken');
 const config = require('../config');
-let decoded;
+
 // middleware to authenticate users accessing secure routes 
 const checkAuth = (req, res, next) => {
     if (!routes.secureRoutes.includes(req.path)) {
@@ -17,6 +17,7 @@ const checkAuth = (req, res, next) => {
         }
 
         let token = req.headers.authorization;
+        let decoded;
 
         if (token.startsWith('Bearer ')) {
             token = token.split(' ')[1];
