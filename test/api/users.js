@@ -47,14 +47,6 @@ describe('## USERS', function () {
         });
 
         it('should return 401 error on getting users with invalid/expired token', async () => {
-            await chai.request(app)
-                .post('/api/v1/auth/register')
-                .send({
-                    email: "test@gmail.com", 
-                    password: "123456789", 
-                    phoneNumber: "+2349070822819", 
-                    fullName: "Nerymar Junior",
-                });
             const res = await chai
                 .request(app)
                 .get('/api/v1/users')
