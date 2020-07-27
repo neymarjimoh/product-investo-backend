@@ -50,7 +50,7 @@ describe('## USERS', function () {
             const res = await chai
                 .request(app)
                 .get('/api/v1/users')
-                .set("Authorization", `Bearer ${authToken}`)
+                // .set("Authorization", `Bearer ${authToken}`)
             expect(res.status).to.equal(401);
             expect(res.body).to.have.property("message");
         });
