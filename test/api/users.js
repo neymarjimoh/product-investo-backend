@@ -51,7 +51,7 @@ describe('## USERS', function () {
                 .request(app)
                 .get('/api/v1/users')
                 // .set("Authorization", `Bearer ${authToken}`)
-            expect(res.status).to.equal(401);
+            expect(res.status).to.equal(412);
             expect(res.body).to.have.property("message");
         });
         

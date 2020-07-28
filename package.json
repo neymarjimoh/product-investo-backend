@@ -4,7 +4,7 @@
   "description": "An application that connects users with investors",
   "main": "index.js",
   "scripts": {
-    "test": "cross-env NODE_ENV=test mocha test/**/*.js --timeout 10000",
+    "test": "cross-env NODE_ENV=test mocha test/**/*.js --timeout 10000 --exit",
     "start": "node index.js",
     "dev": "nodemon index.js"
   },
