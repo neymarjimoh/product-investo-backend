@@ -24,12 +24,12 @@ const checkAuth = (req, res, next) => {
         }
         
         try {
-            if (process.env.NODE_ENV === 'test') {
-                decoded = jwt.verify(token, "token-secret");
-            } else {
-                decoded = jwt.verify(token, config.JWT_SECRET);
-            }
-            req.user = decoded;
+            // if (process.env.NODE_ENV === 'test') {
+            //     decoded = jwt.verify(token, "token-secret");
+            // } else {
+            //     decoded = jwt.verify(token, config.JWT_SECRET);
+            // }
+            // req.user = decoded;
             return next();
         } catch (error) {
             console.log("Error from user authentication >>>>> ", error);
