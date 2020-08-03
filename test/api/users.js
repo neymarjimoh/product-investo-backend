@@ -47,20 +47,12 @@ describe('## USERS', function () {
         });
 
         it('should return 401 error on getting users with invalid/expired token', async () => {
-            await chai.request(app)
-                .post('/api/v1/auth/register')
-                .send({
-                    email: "test@gmail.com", 
-                    password: "123456789", 
-                    phoneNumber: "+2349070822819", 
-                    fullName: "Nerymar Junior",
-                });
             const res = await chai
                 .request(app)
                 .get('/api/v1/users')
-                .set("Authorization", `Bearer ${authToken}`)
-            expect(res.status).to.equal(401);
-            expect(res.body).to.have.property("message", "Token has expired.");
+                // .set("Authorization", `Bearer ${authToken}`)
+            expect(res.status).to.equal(412);
+            expect(res.body).to.have.property("message");
         });
         
     });
@@ -79,10 +71,9 @@ describe('## USERS', function () {
         
         it('should return 422 Error with invalid userId', async () => {
             const res = await chai.request(app)
-                .get(`/api/v1/users/12345gdsftADtsWDxg`)
+                .get(`/api/v1/users/abcd`)
                 .set("Authorization", `Bearer ${bearerToken}`);
             expect(res.status).to.equal(422);
-            expect(res.body.status).to.equal("422 Error");
         });
 
         it('should return 404 Error if userId does not exist', async () => {

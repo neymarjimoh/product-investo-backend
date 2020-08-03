@@ -1,4 +1,7 @@
 # Product Investo API
+[![Build Status](https://travis-ci.org/neymarjimoh/product-investo-backend.svg?branch=master)](https://travis-ci.org/neymarjimoh/product-investo-backend)
+
+## About
 An application that connects users with investors
 
 ## Getting Started

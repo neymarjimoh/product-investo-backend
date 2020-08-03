@@ -1,3 +1,4 @@
+require('dotenv').config();
 const { User } = require('../models');
 const statusCode = require('http-status');
 const bcrypt = require('bcryptjs');
@@ -29,23 +30,25 @@ exports.register = async (req, res) => {
         });
         const savedUser = await user.save();
         const verifyUrl = `http://${req.headers.host}/api/v1/auth/verify-account/${savedUser.email}-${generatedToken}`;
-        await sendMail(
-            'no-reply@product-investo.com',
-            savedUser.email, 
-            'Product-Investo Registration',
-            `
-                <h2 style="display: flex; align-items: center;">Welcome to Product-Investo</h2>
-                <p>Hello ${savedUser.email}, </p>
-                <p>Thank you for registering on <b><span style="color: red;">Product-Investo</span></b>.</p>
-                <p>You can verify your account using this <a href=${verifyUrl}>link</a></p>
-                <br>
-                <p>For more enquiries, contact us via this <a href="mailto: ${config.EMAIL_ADDRESS}">account</a></p>
-                <p>You can call us on <b>+1234568000</b></p>
-                <br>
-                <br>
-                <p>Best Regards, <b><span style="color: red;">Product-Investo</span></b>Team</p>
-            `
-        );
+        if (process.env.NODE_ENV !== 'test'){
+            sendMail(
+                'no-reply@product-investo.com',
+                savedUser.email, 
+                'Product-Investo Registration',
+                `
+                    <h2 style="display: flex; align-items: center;">Welcome to Product-Investo</h2>
+                    <p>Hello ${savedUser.email}, </p>
+                    <p>Thank you for registering on <b><span style="color: red;">Product-Investo</span></b>.</p>
+                    <p>You can verify your account using this <a href=${verifyUrl}>link</a></p>
+                    <br>
+                    <p>For more enquiries, contact us via this <a href="mailto: ${config.EMAIL_ADDRESS}">account</a></p>
+                    <p>You can call us on <b>+1234568000</b></p>
+                    <br>
+                    <br>
+                    <p>Best Regards, <b><span style="color: red;">Product-Investo</span></b>Team</p>
+                `
+            );   
+        }
         return res.status(statusCode.CREATED).json({
             message: 'Account registration was successful. Please check your mail to verify your account',
         });
@@ -94,6 +97,7 @@ exports.activateAccount = async (req, res) => {
 };
 
 exports.login = async (req, res) => {
+    let token;
     const { email, password } = req.body;
     try {
         const user = await User.findOne({ email });
@@ -115,17 +119,32 @@ exports.login = async (req, res) => {
                 message: 'Ensure you enter the right credentials',
             });
         }
-        const token = jwt.sign(
-            {
-                email: user.email,
-                userId: user._id,
-                role: user.role,
-            },
-            config.JWT_SECRET,
-            {
-                expiresIn: '1d'
-            }
-        );
+        if (process.env.NODE_ENV === 'test') {
+            token = jwt.sign(
+                {
+                    email: user.email,
+                    userId: user._id,
+                    role: user.role,
+                },
+                "token-secret",
+                {
+                    expiresIn: '1d'
+                }
+            );
+    
+        } else {
+            token = jwt.sign(
+                {
+                    email: user.email,
+                    userId: user._id,
+                    role: user.role,
+                },
+                config.JWT_SECRET,
+                {
+                    expiresIn: '1d'
+                }
+            );    
+        }
         return res.status(statusCode.OK).json({
             status: `${statusCode.OK} Success`,
             message: "User signed in successfully",
@@ -166,25 +185,27 @@ exports.forgotPassword = async (req, res) => {
             });
         }
         const resetUrl = `http://${req.headers.host}/api/v1/auth/reset-password/${token}`;
-        sendMail(
-            'no-reply@product-investo.com',
-            user.email,
-            'PASSWORD RESET',
-            `   
-                <p>Hello ${user.fullName}, </p>
-                <p>There was a request to reset your password</p>
-                <p>Please click on the button below to get a new password</p>
-                <a href='${resetUrl}'><button>Reset Password</button></a>
-                <br>
-                <p>If you did not make this request, just ignore this mail as nothing has changed.</p>
-                <br>
-                <p>For more enquiries, contact us via this <a href="mailto: ${config.EMAIL_ADDRESS}">account</a></p>
-                <p>You can call us on <b>+1234568000</b></p>
-                <br>
-                <br>
-                <p>Best Regards, <b><span style="color: red;">Product-Investo</span></b>Team</p>
-            `
-        );
+        if (process.env.NODE_ENV !== 'test') {
+            sendMail(
+                'no-reply@product-investo.com',
+                user.email,
+                'PASSWORD RESET',
+                `   
+                    <p>Hello ${user.fullName}, </p>
+                    <p>There was a request to reset your password</p>
+                    <p>Please click on the button below to get a new password</p>
+                    <a href='${resetUrl}'><button>Reset Password</button></a>
+                    <br>
+                    <p>If you did not make this request, just ignore this mail as nothing has changed.</p>
+                    <br>
+                    <p>For more enquiries, contact us via this <a href="mailto: ${config.EMAIL_ADDRESS}">account</a></p>
+                    <p>You can call us on <b>+1234568000</b></p>
+                    <br>
+                    <br>
+                    <p>Best Regards, <b><span style="color: red;">Product-Investo</span></b>Team</p>
+                `
+            );   
+        }
         return res.status(statusCode.OK).json({
             status: `${statusCode.OK} Success`,
             message: `A password reset link has been sent to ${user.email}`
@@ -225,21 +246,23 @@ exports.resetPassword = async (req, res) => {
                 message: 'Password reset token is invalid or has expired.'
             });
         }
-        sendMail(
-            'no-reply@product-investo.com',
-            user.email,
-            'PASSWORD RESET SUCCESSFUL',
-            `   
-                <p>Hello ${user.fullName}, </p>
-                <p>Your request to update your password was successful</p>
-                <br>
-                <p>If you did not make this request, contact us via this <a href="mailto: ${config.EMAIL_ADDRESS}">account</a></p>
-                <p>You can call us on <b>+1234568000</b></p>
-                <br>
-                <br>
-                <p>Best Regards, <b><span style="color: red;">Product-Investo</span></b>Team</p>
-            `
-        );
+        if (process.env.NODE_ENV !== "test") {
+            sendMail(
+                'no-reply@product-investo.com',
+                user.email,
+                'PASSWORD RESET SUCCESSFUL',
+                `   
+                    <p>Hello ${user.fullName}, </p>
+                    <p>Your request to update your password was successful</p>
+                    <br>
+                    <p>If you did not make this request, contact us via this <a href="mailto: ${config.EMAIL_ADDRESS}">account</a></p>
+                    <p>You can call us on <b>+1234568000</b></p>
+                    <br>
+                    <br>
+                    <p>Best Regards, <b><span style="color: red;">Product-Investo</span></b>Team</p>
+                `
+            );    
+        }
         return res.status(statusCode.OK).json({
             ststus: `${statusCode.OK} Success`,
             message: 'Password updated successfully. You may login'
