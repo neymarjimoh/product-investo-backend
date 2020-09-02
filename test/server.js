@@ -6,7 +6,7 @@ chai.use(chaiHttp);
 
 
 describe('##SERVER Connection', function () {
-    
+
     it('should connect to the base endpoint', function (done) {
         chai
             .request(app)
@@ -16,23 +16,22 @@ describe('##SERVER Connection', function () {
                 done();
             });
     });
-    
-    
+
+
     it('should return 404 error on invalid endpoint', function (done) {
         chai
             .request(app)
             .get('/xyz')
             .end((err, res) => {
                 expect(res).to.have.status(404);
-                expect(res.body.message).to.equal('Invalid Request, Request Not found');
                 done();
             });
     });
-    
+
     // testing mocha
     it('should add the numbers', function (done) {
         expect(2 + 4).to.equal(6);
         done();
     });
-    
+
 });

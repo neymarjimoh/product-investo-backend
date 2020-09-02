@@ -1,14 +1,30 @@
 const { body, check, param, validationResult } = require('express-validator');
 const userProfileUpdate = () => {
 	return [
-		check('email')
-			.isEmpty()
-            .withMessage('Email can\'t be updated. Try registering with another email'),
-		check('password')
-            .isEmpty()
-            .withMessage('You have to request for change of password')
-			.isLength({ max: 0 })
-			.withMessage('Password can\'t be updated from here'),
+		check('image')
+			.optional(),
+	  	check('bio')
+			.optional()
+			.not()
+			.isInt()
+			.withMessage('Bio is not a valid string, please input a valid string'),
+	  	check('firstName')
+			.optional()
+			.isAlpha()
+			.trim()
+			.withMessage('FirstName is not a valid String, please input a valid string'),
+	  	check('lastName')
+			.optional()
+			.isAlpha()
+			.trim()
+			.withMessage('LastName is not a valid string, please input a valid string'),
+		check('address')
+			.optional()
+			.not()
+			.isInt()
+			.withMessage('Address is not a valid string, please input a valid string'),
+		check('phoneNumber')
+			.optional(),
 	];
 };
 

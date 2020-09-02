@@ -13,21 +13,23 @@ describe('##USER AUTH', function () {
             done();
         });
     });
-    
+
     describe('=== User Registration ===', function () {
         it('should register a user', async function () {
             const res = await chai.request(app)
                 .post('/api/v1/auth/register')
                 .send({
                     email: "test@gmail.com", 
-                    password: "123456789", 
-                    phoneNumber: "+2349070822819", 
-                    fullName: "Nerymar Junior",
+                    password: "Maffmann001", 
+                    confirmPassword: "Maffmann001", 
+                    lastName: "Nerymar",
+                    firstName: "Junior",
+                    userType: 'entrepreneur',
                 });
             expect(res.status).to.equal(201);
             expect(res.body.message).to.equal('Account registration was successful. Please check your mail to verify your account');
         });
-        
+
         it('should not register a user without required fields (email, password)', function (done) {
             chai.request(app)
                 .post('/api/v1/auth/register')
@@ -44,12 +46,12 @@ describe('##USER AUTH', function () {
                     done();
                 })
         });
-        
+
     });
-    
-    
+
+
     describe('=== User Login ===', function () {
-        
+
         it('should not log in an unregistered user', function (done) {
             chai.request(app)
                 .post('/api/v1/auth/login')
@@ -59,24 +61,25 @@ describe('##USER AUTH', function () {
                 })
                 .end((err, res) => {
                     expect(res).to.have.status(404);
-                    expect(res.body.status).to.equal("404 Error");
-                    expect(res.body).to.have.property(
+                    expect(res.body.status).to.equal("not found");
+                    expect(res.body.error).to.have.property(
                         "message", 
                         "Ensure you enter the right credentials"
                     );
                     done();
                 })
         });
-        
-        
+
+
         it('should login a user', function (done) {
             const user = new User({
                 email: "test@gmail.com",
-                password: bcrypt.hashSync("123456789", 10),
-                phoneNumber: "+2348036695956",
-                fullName: "Lionel Messi",
+                password: bcrypt.hashSync("Maffmann001", 10),
+                passwordConfirm: "Maffmann001",
+                firstName: "Lionel",
+                lastName: "Messi",
                 isVerified: true,
-                role: "user",
+                userType: 'entrepreneur',
             });
             user.isVerified = true;
             user.save()
@@ -85,7 +88,7 @@ describe('##USER AUTH', function () {
                 .post('/api/v1/auth/login')
                 .send({
                     email: "test@gmail.com",
-                    password: "123456789",
+                    password: "Maffmann001",
                 })
                 .end((err, res) => {
                     expect(res.status).to.equal(200);
@@ -98,13 +101,15 @@ describe('##USER AUTH', function () {
 
         });
 
-        
+
         it('should not log in a user that is not verified', function (done) {
             const user = new User({
                 email: "test@gmail.com",
-                password: bcrypt.hashSync("123456789", 10),
-                phoneNumber: "+2348036695956",
-                fullName: "Lionel Messi",
+                password: bcrypt.hashSync("Maffmann001", 10),
+                passwordConfirm: "Maffmann001",
+                firstName: "Lionel",
+                lastName: "Messi",
+                userType: 'entrepreneur',
             });
             user.save()
             .then(result => {
@@ -112,13 +117,13 @@ describe('##USER AUTH', function () {
                 .post('/api/v1/auth/login')
                 .send({
                     email: "test@gmail.com",
-                    password: "123456789"
+                    password: "Maffmann001"
                 })
                 .end((err, res) => {
                     if (err) done(err);
                     expect(res.status).to.equal(401);
-                    expect(res.body).to.have.property("status", "401 Error");
-                    expect(res.body).to.have.property(
+                    expect(res.body).to.have.property("status", "fail");
+                    expect(res.body.error).to.have.property(
                         "message", 
                         "You have to verify your account"
                     );
@@ -126,19 +131,21 @@ describe('##USER AUTH', function () {
                 })
             })
         });
-                
+
     });
-    
-    
+
+
     describe('=== User Forgot Password ===', function () {
-        
+
         it('should send password reset link', function (done) {
             const user = new User({
                 email: "test@gmail.com",
-                password: bcrypt.hashSync("123456789", 10),
-                phoneNumber: "+2348036695956",
-                fullName: "Lionel Messi",
-                isVerified: true
+                password: bcrypt.hashSync("Maffmann001", 10),
+                passwordConfirm: "Maffmann001",
+                firstName: "Lionel",
+                lastName: "Messi",
+                isVerified: true,
+                userType: 'entrepreneur',
             })
             user.save()
             .then((result) => {
@@ -167,12 +174,12 @@ describe('##USER AUTH', function () {
             .end((err, res) => {
                 if(err) done(err);
                 expect(res.status).to.equal(404);
-                expect(res.body.status).to.eql("404 Error");
-                expect(res.body).to.have.property("message");
+                expect(res.body.status).to.eql("failed");
+                expect(res.body).to.have.property("error");
                 done();
             })
         });
-        
+
     });
-    
+
 });

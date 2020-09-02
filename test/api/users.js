@@ -3,7 +3,7 @@ const chaiHttp = require('chai-http');
 const bcrypt = require('bcryptjs');
 const { expect } = chai;
 chai.use(chaiHttp);
-const { User } = require('../../models');
+const { User, BlackListedToken } = require('../../models');
 const app = require('../../index');
 
 let bearerToken;
@@ -15,10 +15,12 @@ describe('## USERS', function () {
     beforeEach(async () => {
         const user = new User({
             email: "test@gmail.com",
-            password: bcrypt.hashSync("123456789", 10),
-            phoneNumber: "+2348036695956",
-            fullName: "Lionel Messi",
+            password: bcrypt.hashSync("Maffmann001", 10),
+            passwordConfirm: "Maffmann001",
+            firstName: "Lionel",
+            lastName: "Messi",
             isVerified: true,
+            userType: 'entrepreneur',
         });
         savedUser = await user.save();
         const res = await chai
@@ -26,7 +28,7 @@ describe('## USERS', function () {
             .post('/api/v1/auth/login')
             .send({
                 email: savedUser.email,
-                password: "123456789",
+                password: "Maffmann001",
             });
         bearerToken = res.body.token;
     });
@@ -37,29 +39,29 @@ describe('## USERS', function () {
 
     describe('#Get Users() /users', function () {
 
-        it('should get users from the database', async () => {
+        it('should get empty investor users from the database', async () => {
             const res = await chai
                 .request(app)
                 .get('/api/v1/users')
                 .set("Authorization", `Bearer ${bearerToken}`);
-            expect(res.status).to.equal(200);
-            expect(res.body.data.length).to.equal(1);
+            expect(res.status).to.equal(404);
+            // expect(res.body.status).to.equal("200 Success");
+            // expect(res.body.data.length).to.equal(1);
         });
 
         it('should return 401 error on getting users with invalid/expired token', async () => {
             const res = await chai
                 .request(app)
                 .get('/api/v1/users')
-                // .set("Authorization", `Bearer ${authToken}`)
             expect(res.status).to.equal(412);
-            expect(res.body).to.have.property("message");
+            expect(res.body).to.have.property("error");
         });
-        
+
     });
-    
-    
+
+
     describe('#GET A User() /users/:userId', function () {
-        
+
         it('should get a user by Id', async () => {
             const res = await chai.request(app)
                 .get(`/api/v1/users/${savedUser.id}`)
@@ -68,7 +70,7 @@ describe('## USERS', function () {
             expect(res.body.status).to.equal("200 Success");
             expect(res.body.message).to.equal("User found ");
         });
-        
+
         it('should return 422 Error with invalid userId', async () => {
             const res = await chai.request(app)
                 .get(`/api/v1/users/abcd`)
@@ -81,7 +83,7 @@ describe('## USERS', function () {
             const res = await chai.request(app)
                 .get(`/api/v1/users/${validMongooseId}`)
                 .set("Authorization", `Bearer ${bearerToken}`);
-                
+
             expect(res.status).to.equal(404);
             expect(res.body.status).to.equal("404 Error");
         });
