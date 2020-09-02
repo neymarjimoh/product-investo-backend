@@ -1,50 +1,72 @@
 require('dotenv').config();
 const routes = require('../constants/routesGroup');
-const jwt = require('jsonwebtoken');
-const config = require('../config');
+const authHelper = require('../helpers/authHelper');
+const ErrorHelper = require('../helpers/errorHelper');
+const { User, BlackListedToken } = require('../models');
 
-// middleware to authenticate users accessing secure routes 
-const checkAuth = (req, res, next) => {
-    if (!routes.secureRoutes.includes(req.path)) {
-        return next();
-    } else {
-
+const checkAuth = async (req, res, next) => {
+    let err;
+    if (
+        routes.secureRoutes.includes(req.path) &&
+        !routes.unsecureRoutes.includes(req.path)
+    ) {
         if (!req.headers.authorization) {
-            return res.status(412).json({
-                error: true,
-                message: 'Access denied!! Missing authorization credentials'
-            });
+            err = new ErrorHelper(412, 'Fail', 'Access denied!! Missing authorization credentials');
+            return next(err, req, res, next);
         }
-
         let token = req.headers.authorization;
-        let decoded;
-
         if (token.startsWith('Bearer ')) {
             token = token.split(' ')[1];
         }
-        
         try {
-            if (process.env.NODE_ENV === 'test') {
-                return next();
-            } else {
-                decoded = jwt.verify(token, config.JWT_SECRET);
-                req.user = decoded;
-                return next();
+            const blackListedToken = await BlackListedToken.findOne({ token });
+            if (blackListedToken) {
+                err = new ErrorHelper(401, 'Fail', 'Invalid token provided, please sign in.');
+                return next(err, req, res, next);
             }
+            const decoded = authHelper.verifyToken(token);
+            const user = await User.findById(decoded.userId);
+            if (!user) {
+                err = new ErrorHelper(401, 'Fail', 'You are not authorized to access this route.');
+                return next(err, req, res, next);
+            }
+            req.user = user;
+            return next();
         } catch (error) {
             console.log("Error from user authentication >>>>> ", error);
             if (error.name === 'TokenExpiredError') {
-                return res.status(401).json({
-                    message: 'Token has expired.'
-                }); 
+                err = new ErrorHelper(401, 'Fail', 'Token expired.');
+                return next(err, req, res, next);
             }
-			return res.status(401).json({
-				message: 'You must be logged in..'
-			});
+            return next(error);
         }
+    } else {
+        return next();
     }
 };
 
+const verifyAdmin = async (req, res, next) => {
+
+};
+
+const verifySuperAdmin = async (req, res, next) => {
+
+};
+
+const verifiedUserOnly = async (req, res, next) => {
+    let err;
+    const { isVerified } = req.user;
+
+    if (!isVerified) {
+        err = new ErrorHelper(401, 'Fail', 'Your account has not been verified, please verify to continue');
+        return next(err, req, res, next);
+    }
+    return next();
+};
+
 module.exports = {
-    checkAuth
+    checkAuth,
+    verifyAdmin,
+    verifySuperAdmin,
+    verifiedUserOnly,
 };
