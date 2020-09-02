@@ -1,0 +1,980 @@
+openapi: 3.0.0
+info:
+  version: 1.0.1
+  title: Product Investo API documentation
+  description: Product Investo API endpoints.
+servers:
+  - url: '{protocol}://{host}:{port}/'
+    description: Development server (uses test data)
+    variables:
+      port:
+        enum:
+          - ''
+          - '4000'
+          - '4001'
+        default: ''
+      protocol:
+        enum:
+          - 'http'
+          - 'https'
+        default: 'http'
+      host:
+        enum:
+          - '127.0.0.1'
+          - 'invest.herokuapp.com'
+        default: '127.0.0.1'
+
+components:
+  errors:
+    properties:
+      internalServerError:
+        description: Something went wrong, please try again or check back for a fix
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+                - message
+              properties:
+                status:
+                  type: string
+                message:
+                  type: string
+      invalidIdError:
+        description: Ensure you enter a valid ID
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+                - message
+              properties:
+                status:
+                  type: string
+                message:
+                  type: string
+      notFoundError:
+        application/json:
+          schema:
+            type: object
+            required:
+              - status
+              - message
+            properties:
+              status:
+                type: string
+              message:
+                type: string
+      authLoginError:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              message:
+                type: string
+      MissingAuthError:
+        application/json:
+          schema:
+            type: object
+            required:
+              - error
+              - message
+            properties:
+              error:
+                type: boolean
+              message: 
+                type: string
+  securitySchemes:
+    Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - email
+        - password
+        - userType
+      properties:
+        firstName:
+          type: String
+          example: John
+        lastName:
+          type: String
+          example: Doe
+        email:
+          type: String
+          example: testUsername@gmail.com
+        role:
+          type: String
+          example: user
+        password:
+          type: String
+          example: AveryStrongPassword
+        isVerified:
+          type: Boolean
+          example: false
+        status:
+          type: String
+          example: active
+        userType:
+          type: String
+          example: entrepreneur
+        profile:
+          type: String
+          $ref: '#/components/schemas/Profile'
+        investorType:
+          type: String
+          example: small-scale
+        products:
+          type: Array
+          items:
+            $ref: '#/components/schemas/Product'
+        investors:
+          type: Array
+        entrepreneurs:
+          type: Array
+        investments:
+          type: Array
+    Profile: 
+      type: object
+      required:
+        - userId
+        - image
+        - lastName
+        - firstName
+      properties:
+        userId:
+          type: string
+        image: 
+          type: string
+        firstName:
+          type: String
+          example: John
+        lastName:
+          type: String
+          example: Doe
+        bio:
+          type: String
+          example: Just a normal user
+        address:
+          type: String
+          example: My address
+        phoneNumber:
+          type: String
+          example: "+23490505785638"
+    Product:
+      type: object
+      required:
+        - name
+        - description
+        - tags
+        - profitGenerated
+        - amountNeeded
+        - dateCreated
+        - status
+      properties:
+        name:
+          type: String
+          example: local Hand Bags
+        description:
+          type: String
+          example: A brief description
+        tags:
+          type: Array
+          example: Agriculture, Engineering 
+        profitGenerated:
+          type: Number
+          example: 150,000
+        amountNeeded:
+          type: Number
+          example: 200,000
+        productOwner:
+          type: object
+          $ref: "#/components/schemas/User"
+        investors:
+          type: array
+          $ref: "#/components/schemas/User"
+    Investment:
+      type: object
+      required:
+        - product
+      properties:
+        product:
+          type: object
+          $ref: "#/components/schemas/Product"
+        user:
+          type: object
+          $ref: "#/components/schemas/User"
+        investor:
+          type: object
+          $ref: "#/components/schemas/User"
+    Report:
+      type: object
+      required:
+        - title
+        - body
+      properties:
+        title:
+          type: String
+          example: This user is a scammer
+        body:
+          type: String
+          example: This user is a scammer that ...
+        reportedBy:
+          type: object
+          $ref: "#/components/schemas/User"
+        reporting:
+          type: object
+          $ref: "#/components/schemas/User"
+    BlackListedToken:
+      type: object
+      required:
+        - token
+        - userId
+      properties:
+        token:
+          type: String
+          format: jwt format
+        userId:
+          type: object
+          $ref: "#/components/schemas/User"
+  responses:
+    SuccessResponse:
+      application/json:
+        schema:
+          type: object
+          required:
+            - status
+            - message
+          properties:
+            status:
+              type: string
+            message:
+              type: string
+  parameters:
+    bearerToken:
+      in: path
+      name: Bearer Token
+      description: Authentication token 
+      required: true
+      schema:
+        type: string
+    tokenParams:
+      in: path
+      name: token
+      description: Auth Token
+      required: true
+      schema:
+        type: string
+    userId:
+      in: path
+      name: userId
+      description: User unique ID
+      required: true
+      schema:
+        type: string
+    productId:
+      in: path
+      name: productId
+      description: Product unique ID
+      required: true
+      schema:
+        type: string
+paths:
+  /api/v1/auth/register:
+    post:
+      summary: Register User
+      description: Adds user to the users collection
+      tags:
+        - Users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: 
+                - lastName
+                - firstName
+                - email
+                - password
+                - confirmPassword
+                - userType
+              properties:
+                firstName:
+                  type: String
+                  example: John
+                lastName:
+                  type: String
+                  example: Doe
+                email:
+                  type: String
+                  example: johndoe@example.com
+                role:
+                  type: String
+                  example: user
+                userType:
+                  type: String
+                  example: entrepreneur
+                password:
+                  type: String
+                  example: AveryStrongPassword
+                confirmPassword:
+                  type: String
+                  example: AveryStrongPassword
+                investorType:
+                  type: String
+                  example: large-scale
+                  format: only investor users
+      responses:
+        201:
+          description: Account registration was successful. Please check your mail to verify your account
+        409:
+          description: User already exists
+        500:
+          description: Something went wrong, please try again or check back for a fix
+  
+  /api/v1/auth/verify:
+    patch:
+      summary: Verify account
+      tags:
+        - Users
+      parameters:
+        - in: query
+          name: s
+          description: The token generated for verification with payload
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: User account has been verified successfully. You can login.
+        412:
+          description: This account has already been verified.
+        404:
+          description: Invalid verification link
+        500:
+          description: Something went wrong, please try again or check back for a fix
+
+  /api/v1/auth/resend-verify:
+    post:
+      summary: Request for verification link
+      description: resends verification link to users upon link expiration
+      tags:
+        - Users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: String
+                  example: testUsername@gmail.com
+      responses:
+        200:
+          description: Please check your mail to verify your account
+        401:
+          description: Your account has been verified already.
+        404:
+          description: User doesn't exist. Ensure you enter the right credentials'
+        500:
+          description: Something went wrong, please try again or check back for a fix
+  
+  /api/v1/auth/login:
+    post:
+      summary: Login Users
+      description: authenticate users into the system
+      tags:
+        - Users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: String
+                  example: testUsername@gmail.com
+                password:
+                  type: String
+                  example: AveryStrongPassword
+      responses:
+        200:
+          description: User signed in successfully
+        401:
+          description: You have to verify your account
+        403:
+          description: Ensure you enter the right credentials
+        404:
+          description: Ensure you enter the right credentials'
+        500:
+          description: Something went wrong, please try again or check back for a fix
+  
+  /api/v1/auth/forgot-password:
+    post:
+      summary: Password Recovery Request
+      description: sends users a password reset link via emails
+      tags:
+        - Users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: String
+                  example: testUsername@gmail.com
+      responses:
+        200:
+          description: A password reset link has been sent to ${email}
+          content:
+            $ref: "#/components/responses/SuccessResponse"
+        404:
+          description: Sorry an Account with Email ${email} doesn't exist
+          content:
+            $ref: "#/components/errors/properties/notFoundError"
+        500:
+          $ref: '#/components/errors/properties/internalServerError'
+                    
+  /api/v1/auth/reset-password?token={token}:
+    patch:
+      summary: Resets password
+      tags:
+        - Users
+      parameters:
+        - in: query
+          name: token
+          description: The token generated for resetting password with payload
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: String
+                  example: AveryStrongPassword
+                confirmPassword:
+                  type: String
+                  example: AveryStrongPassword
+      responses:
+        200:
+          description: Password updated successfully. You may login
+          content:
+            $ref: "#/components/responses/SuccessResponse"
+        404:
+          description: Password reset token is invalid or has expired.
+          content:
+            $ref: "#/components/errors/properties/notFoundError"
+        500:
+          $ref: '#/components/errors/properties/internalServerError'
+
+  /api/v1/auth/change-password:
+    patch:
+      summary: Changes password by already logged-in users
+      tags:
+        - Users
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          $ref: "#/components/parameters/bearerToken"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                oldPassword:
+                  type: String
+                  example: AveryStrongPassword  
+                newPassword:
+                  type: String
+                  example: AveryStrongPassword
+                confirmPassword:
+                  type: String
+                  example: AveryStrongPassword       
+      responses:
+        200:
+          description: Password update was successful
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - data
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+        401:
+          description: Make sure you're logged in
+          content:
+            $ref: "#/components/errors/properties/authLoginError"
+        403:
+          description: Ensure you enter the right credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+        500:
+          $ref: '#/components/errors/properties/internalServerError'
+  /api/v1/auth/logout:
+    post:
+      summary: Logs the user out of the platform
+      tags:
+        - Users
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          $ref: "#/components/parameters/bearerToken"
+      responses:
+        200:
+          description: Successfully logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    example: Successfully logged out
+        412:
+          description: Access denied!! Missing authorization credentials
+          content:
+            $ref: "#/components/errors/properties/MissingAuthError"
+        401:
+          description: You must be logged in..
+          content:
+            $ref: "#/components/errors/properties/authLoginError"
+        404:
+          description: No records found.
+          content:
+            $ref: "#/components/errors/properties/notFoundError"
+        500:
+          $ref: '#/components/errors/properties/internalServerError'
+
+  /api/v1/users:
+    get:
+      summary: Gets all users on the platform
+      tags:
+        - Users
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          $ref: "#/components/parameters/bearerToken"
+      responses:
+        200:
+          description: 7 Users found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                  - data
+                  - totalPages
+                  - currentPage
+                properties:
+                  status:
+                    type: string
+                  message: 
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/User"
+                  totalPages:
+                    type: number
+                  currentPage:
+                    type: number
+        412:
+          description: Access denied!! Missing authorization credentials
+          content:
+            $ref: "#/components/errors/properties/MissingAuthError"
+        401:
+          description: You must be logged in..
+          content:
+            $ref: "#/components/errors/properties/authLoginError"
+        404:
+          description: No records found.
+          content:
+            $ref: "#/components/errors/properties/notFoundError"
+        500:
+          $ref: '#/components/errors/properties/internalServerError'
+
+  /api/v1/users/{userId}:
+    get:
+      summary: Gets a user 
+      tags:
+        - Users
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          $ref: "#/components/parameters/userId"
+        - in: path
+          $ref: "#/components/parameters/bearerToken"
+      responses:
+        200:
+          description: User found 
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                  - data
+                properties:
+                  status:
+                    type: string
+                  message: 
+                    type: string
+                  data:
+                    type: object
+                    $ref: "#/components/schemas/User"
+        412:
+          description: Access denied!! Missing authorization credentials
+          content:
+            $ref: "#/components/errors/properties/MissingAuthError"
+        422:
+          $ref: "#/components/errors/properties/invalidIdError"
+        401:
+          description: You must be logged in..
+          content:
+            $ref: "#/components/errors/properties/authLoginError"
+        404:
+          description: User with the ID ${userId} doesn't exist or has been deleted.
+          content:
+            $ref: "#/components/errors/properties/notFoundError"
+        500:
+          $ref: '#/components/errors/properties/internalServerError'
+
+    delete:
+      summary: Deletes a user account
+      tags:
+        - Users
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          $ref: "#/components/parameters/userId"
+        - in: path
+          $ref: "#/components/parameters/bearerToken"
+      responses:
+        200:
+          description: Account deleted successfully 
+          content:
+            $ref: "#/components/responses/SuccessResponse"
+        412:
+          description: Access denied!! Missing authorization credentials
+          content:
+            $ref: "#/components/errors/properties/MissingAuthError"
+        422:
+          $ref: "#/components/errors/properties/invalidIdError"
+        401:
+          description: You must be logged in..
+          content:
+            $ref: "#/components/errors/properties/authLoginError"
+        403:
+          description: Unathorised, you can only delete your account
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  message:
+                    type: string
+                  status:
+                    type: string
+        404:
+          description: User does not exist or has been deleted
+          content:
+            $ref: "#/components/errors/properties/notFoundError"
+        500:
+          $ref: '#/components/errors/properties/internalServerError'
+
+  /api/v1/users/profile/update/{userId}:
+    patch:
+      summary: Update User Account/profile
+      tags:
+        - Users
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          $ref: "#/components/parameters/userId"
+        - in: path
+          $ref: "#/components/parameters/bearerToken"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                address:
+                  type: String
+                  example: YourHomeAddress
+                bio:
+                  type: String
+                  example: I am a tailor with ....
+                phoneNumber:
+                  type: String
+                  example: "+2349070822819"
+                  format: Country-Code
+                firstName:
+                  type: string
+                  example: Korir
+                lastName:
+                  type: string
+                  example: Nicanor
+                image:
+                  type: string
+                  format: .png/.jpg
+      responses:
+        200:
+          description: Your profile has been updated successfully 
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - profile
+                properties:
+                  message:
+                    type: string
+                    example: Your profile has been updated successfully
+                  profile:
+                    type: object
+                    $ref: "#/components/schemas/Profile"
+        412:
+          description: Access denied!! Missing authorization credentials
+          content:
+            $ref: "#/components/errors/properties/MissingAuthError"
+        422:
+          $ref: "#/components/errors/properties/invalidIdError"
+        401:
+          description: You must be logged in..
+          content:
+            $ref: "#/components/errors/properties/authLoginError"
+        403:
+          description: You are not allowed to edit this profile
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  message:
+                    type: string
+                  status:
+                    type: string
+        404:
+          description: Make sure you're logged in
+          content:
+            $ref: "#/components/errors/properties/notFoundError"
+        500:
+          $ref: '#/components/errors/properties/internalServerError'
+
+  /api/v1/users/search/{name}:
+    get:
+      summary: Searches for users by their names
+      tags:
+        - Users
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          name: name
+          description: name of registered users
+          required: true
+          schema:
+            type: string
+        - in: path
+          $ref: "#/components/parameters/bearerToken"
+      responses:
+        200:
+          description: 7 Users found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - data
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/User"
+        404:
+          description: User does not exist
+          content:
+            $ref: "#/components/errors/properties/notFoundError"
+        412:
+          description: Access denied!! Missing authorization credentials
+          content:
+            $ref: "#/components/errors/properties/MissingAuthError"
+        401:
+          description: You must be logged in..
+          content:
+            $ref: "#/components/errors/properties/authLoginError"
+        500:
+          $ref: '#/components/errors/properties/internalServerError'
+
+  /api/v1/products/new:
+    post:
+      summary: Creates a new product by an entrepreneur
+      tags:
+        - Products
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          $ref: "#/components/parameters/bearerToken"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Product"
+      responses:
+        201:
+          description: Product added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - data
+                properties:
+                  message:
+                    type: string
+                    example: Product added successfully
+                  data:
+                    type: object
+                    $ref: "#/components/schemas/Product"
+        412:
+          description: Access denied!! Missing authorization credentials
+          content:
+            $ref: "#/components/errors/properties/MissingAuthError"
+        401:
+          description: You must be logged in..
+          content:
+            $ref: "#/components/errors/properties/authLoginError"
+        403: 
+          description: You are not eligible to have or add products
+        400:
+          description: Unable to update User with the new product
+          content:
+            $ref: "#/components/errors/properties/notFoundError"
+        500:
+          $ref: '#/components/errors/properties/internalServerError'
+
+  /api/v1/products/update/{productId}:
+    patch:
+      summary: Updates products
+      tags:
+        - Products
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          $ref: "#/components/parameters/productId"
+        - in: path
+          $ref: "#/components/parameters/bearerToken"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: String
+                  example: leather shoes
+                description:
+                  type: String
+                  example: A leather shoe that ...
+                tags:
+                  type: Array
+                  example: Leather, Shoe, textile
+                amountNeeded:
+                  type: Number
+                  example: 200,000
+                productOwner:
+                  type: string
+                  example: Nicanor
+      responses:
+        200:
+          description: Your profile has been updated successfully 
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - profile
+                properties:
+                  message:
+                    type: string
+                    example: Your profile has been updated successfully
+                  profile:
+                    type: object
+                    $ref: "#/components/schemas/Profile"
+        422:
+          $ref: "#/components/errors/properties/invalidIdError"
+        403:
+          description: You are not allowed to edit this profile
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  message:
+                    type: string
+                    example: You have no write access to this product
+                  status:
+                    type: string
+                    example: 403 Error
+        404:
+          description: Product not found or has been deleted.
+          content:
+            $ref: "#/components/errors/properties/notFoundError"
+        500:
+          $ref: '#/components/errors/properties/internalServerError'
