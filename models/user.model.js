@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const mongooseIntlPhoneNumber = require('mongoose-intl-phone-number');
 const Schema = mongoose.Schema;
 
 const userSchema = new Schema(
@@ -8,56 +7,85 @@ const userSchema = new Schema(
             type: String,
             required: true,
             unique: true,
-            trim: true
+            trim: true,
         },
-        fullName: {
+        firstName: {
             type: String,
             required: true,
-            trim: true
+        },
+        lastName: {
+            type: String,
+            required: true,
         },
         password: {
             type: String,
             required: true,
-            trim: true
-        },
-        phoneNumber: {
-            type: String,
-            trim: true,
-            required: true,
-            unique: true
         },
         role: {
             type: String,
-            default: 'user'
+            enum: ['USER', 'ADMIN'],
+            default: 'USER', // all users either entrepreneurs or investors have role of user
         },
-        image: {
+        userType: {
             type: String,
-        },
-        address:{
-            type: String
+            enum: ['entrepreneur', 'investor'],
+            required: true,
         },
         isVerified : {
             type: Boolean,
-            default: false
+            default: false,
         },
-        about: {
+        status: {
             type: String,
+            enum: ['active', 'inactive', 'reported'],
+            default: 'active',
         },
-        verificationToken: String,
-        resetToken: String,
-        expireToken: Date,
+        numOfReports: {
+            type: Number,
+            default: 0,
+        },
+        investorType: {
+            type: String,
+            enum: ['small-scale', 'medium-scale', 'large-scale'],
+        },
+        profile: {
+            type: Schema.Types.ObjectId,
+            ref: 'Profile',
+        },
+        investors: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'User',
+            },
+        ],
+        entrepreneurs: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'User',
+            }
+        ],
+        investments: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'Investment',
+            },
+        ],
+        products: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'Product',
+            },
+        ],
+        reports: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'Report',
+            },
+        ],
     },
     {
-        timestamps: true
+        timestamps: true,
     }
 );
-
-userSchema.plugin(mongooseIntlPhoneNumber, {
-    hook: 'validate',
-    phoneNumberField: 'phoneNumber',
-    nationalFormatField: 'nationalFormat',
-    internationalFormat: 'internationalFormat',
-    countryCodeField: 'countryCode',
-});
 
 module.exports = mongoose.model('User', userSchema);

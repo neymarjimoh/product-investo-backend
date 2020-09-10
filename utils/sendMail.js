@@ -14,6 +14,7 @@ const transporter = nodemailer.createTransport({
 });
 
 module.exports = (from, to, subject, msg) => {
+  console.log("33333333");
     const mailOptions = {
       from,
       to,
@@ -23,6 +24,7 @@ module.exports = (from, to, subject, msg) => {
     };
     try {
         transporter.sendMail(mailOptions);
+        console.log("====sent======");
     } catch(err) {
         console.log('Error from sending mail >>> ', err);
     }
