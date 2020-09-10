@@ -1,10 +1,11 @@
 const express = require('express');
 const authRouter = express.Router();
-
 const {
     register,
     activateAccount,
+    resendVerifyUrl,
     login,
+    logout,
     forgotPassword,
     resetPassword,
     changePassword,
@@ -13,14 +14,19 @@ const {
 const {
     userSignUpValidationRules,
     userSignInValidationRules,
+    userEmailRules,
+    resetPasswordRules,
+    changePasswordRules,
     validate,
 } = require('../validation/auth.validation');
 
 authRouter.post('/register', userSignUpValidationRules(), validate, register);
-authRouter.patch('/verify-account/:email-:token', activateAccount);
+authRouter.patch('/verify', activateAccount);
+authRouter.post('/resend-verify', userEmailRules(), validate, resendVerifyUrl);
 authRouter.post('/login', userSignInValidationRules(), validate, login);
-authRouter.post('/forgot-password', forgotPassword);
-authRouter.post('/reset-password/:token', resetPassword);
-authRouter.post('/change-password', changePassword);
+authRouter.post('/logout', logout);
+authRouter.post('/forgot-password', userEmailRules(), validate, forgotPassword);
+authRouter.patch('/reset-password', resetPasswordRules(), validate, resetPassword);
+authRouter.patch('/change-password', changePasswordRules(), validate, changePassword);
 
 module.exports = authRouter;

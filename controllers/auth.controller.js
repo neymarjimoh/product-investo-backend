@@ -1,291 +1,346 @@
-const { User } = require('../models');
+require('dotenv').config();
 const statusCode = require('http-status');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
-const cryptoRandomString = require('crypto-random-string');
+const gravatar = require('gravatar');
+const authHelper = require('../helpers/authHelper');
+const ErrorHelper = require('../helpers/errorHelper');
+const { User, Profile, BlackListedToken } = require('../models');
 const sendMail = require('../utils/sendMail');
 const config = require('../config/index');
 
-exports.register = async (req, res) => {
-    const { email, password, phoneNumber, fullName } = req.body;
-    const image = req.file && req.file.path;
+const register = async (req, res, next) => {
+    const { 
+        email, 
+        password, 
+        lastName,
+        firstName,
+        role, 
+        userType,
+        investorType, 
+    } = req.body;
+    let err;
     try {
+        const genericWordsArray = ['password', 'Password', 123, firstName, lastName];
+        const genericWord = genericWordsArray.find(word => password.includes(word));
+        if (genericWord) {
+            err = new ErrorHelper(400, '400 Error', 'Do not use a common word as passwords for security reasons.');
+            return next(err, req, res, next);
+        }
         const userExists = await User.findOne({ email });
         if (userExists) {
-            return res.status(statusCode.CONFLICT).json({
-                message: 'User already exists'
-            });
+            err = new ErrorHelper(409, "conflict", "User already exists");
+            return next(err, req, res, next);
         }
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const generatedToken = cryptoRandomString({length: 15, type: 'url-safe'});
+        const hashedPassword = authHelper.hashPassword(password);
         const user = new User({
             email,
             password: hashedPassword,
-            phoneNumber,
-            fullName,
-            image,
-            verificationToken: generatedToken,
+            firstName,
+            lastName,
+            role,
+            userType,
+            investorType,
         });
         const savedUser = await user.save();
-        const verifyUrl = `http://${req.headers.host}/api/v1/auth/verify-account/${savedUser.email}-${generatedToken}`;
-        await sendMail(
-            'no-reply@product-investo.com',
-            savedUser.email, 
-            'Product-Investo Registration',
-            `
-                <h2 style="display: flex; align-items: center;">Welcome to Product-Investo</h2>
-                <p>Hello ${savedUser.email}, </p>
-                <p>Thank you for registering on <b><span style="color: red;">Product-Investo</span></b>.</p>
-                <p>You can verify your account using this <a href=${verifyUrl}>link</a></p>
-                <br>
-                <p>For more enquiries, contact us via this <a href="mailto: ${config.EMAIL_ADDRESS}">account</a></p>
-                <p>You can call us on <b>+1234568000</b></p>
-                <br>
-                <br>
-                <p>Best Regards, <b><span style="color: red;">Product-Investo</span></b>Team</p>
-            `
-        );
+        const generatedToken = authHelper.generateToken({ userId: savedUser._id }, '1d');
+        const verifyUrl = `http:\/\/${req.headers.host}\/api\/v1\/auth\/verify?s=${generatedToken}`;
+        if (process.env.NODE_ENV !== 'test') {
+            sendMail(
+                'no-reply@product-investo.com',
+                savedUser.email, 
+                'Product-Investo Registration',
+                `
+                    <h2 style="display: flex; align-items: center;">Welcome to Product-Investo</h2>
+                    <p>Hello ${lastName} ${firstName}, </p>
+                    <p>You can verify your account using this <a href=${verifyUrl}>link</a></p>
+                    <br>
+                    <br>
+                    <p>Best Regards, <b><span style="color: red;">Product-Investo</span></b>Team</p>
+                `
+            );
+        }
+        const avatarImage = gravatar.url(email, {
+            s: '200', 
+            f: 'y', 
+            d: 'mm',
+        });
+        console.log("77777777");
+        const userProfile = new Profile({
+            userId: savedUser._id,
+            image: req.file ? req.file.path : avatarImage,
+            lastName: savedUser.lastName,
+            firstName: savedUser.firstName,
+        });
+        const savedProfile = await userProfile.save();
+        console.log(savedProfile);
         return res.status(statusCode.CREATED).json({
             message: 'Account registration was successful. Please check your mail to verify your account',
         });
     } catch (error) {
-        console.log('Error from user sign up >>>> ', error);
-        return res.status(statusCode.INTERNAL_SERVER_ERROR).json({
-            message: 'Something went wrong. Please Try again.',
-        });
+		console.log(`Error from user registration >>> ${error}`);
+		return next(error);
     }
 };
 
-exports.activateAccount = async (req, res) => {
-    const { email, token } = req.params;
+const activateAccount = async (req, res, next) => {
+    const { s } = req.query;
+    let err;
     try {
+        const  { userId } = authHelper.verifyToken(s);
         const user = await User.findOneAndUpdate(
-            { 
-                email, 
-                verificationToken: token 
-            }, 
-            { 
-                isVerified: true, 
-                verificationToken: null 
-            }, 
-            { 
-                new: true 
-            }
+            { _id: userId }, 
+            { isVerified: true }, 
+            { new: true }
         );
         if (!user) {
-			return res.status(statusCode.NOT_FOUND).json({
-				message: `Account ${email} doesn't exist . or ensure you enter the right url`,
-			});
+            err = new ErrorHelper(404, "not found", "Invalid verification link");
+            return next(err, req, res, next);
+        }
+        if (user.isVerified) {
+            err = new ErrorHelper(412, "conflict", "This account has already been verified.");
+            return next(err, req, res, next);
         }
         return res.status(statusCode.OK).json({
             message: 'User account has been verified successfully. You can login.'
         });
-        // user.isVerified = true;
-        // user.verificationToken = null;
-        // const updatedUser = await user.save();
-        // console.log(updatedUser);
     } catch (error) {
         console.log('Error from user verification >>>> ', error);
-        return res.status(statusCode.INTERNAL_SERVER_ERROR).json({
-            message: 'Something went wrong. Please Try again.',
-        });
+        return next(error);
     }
 };
 
-exports.login = async (req, res) => {
+const resendVerifyUrl = async (req, res, next) => {
+    const { email } = req.body;
+    let err;
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            err = new ErrorHelper(404, "not found", "User doesn\'t exist. Ensure you enter the right credentials");
+            return next(err, req, res, next);
+        }
+        if (user.isVerified) {
+            err = new ErrorHelper(statusCode.UNAUTHORIZED, "conflict", "Your account has been verified already.");
+            return next(err, req, res, next);
+        }
+        const generatedToken = authHelper.generateToken({ userId: user._id }, '1d');
+        const resendUrl = `http:\/\/${req.headers.host}\/api\/v1\/auth\/verify?s=${generatedToken}`;
+        const { firstName, lastName } = user;
+        if (process.env.NODE_ENV !== 'test') {
+            sendMail(
+                'no-reply@product-investo.com',
+                user.email, 
+                'Product-Investo Verification',
+                `
+                    <h2 style="display: flex; align-items: center;">Welcome to Product-Investo</h2>
+                    <p>Hello ${lastName} ${firstName}, </p>
+                    <p>Thank you for registering on <b><span style="color: red;">Product-Investo</span></b>.</p>
+                    <p>You can verify your account using this <a href=${resendUrl}>link</a></p>
+                    <br>
+                    <p>For more enquiries, contact us via this <a href="mailto: ${config.EMAIL_ADDRESS}">account</a></p>
+                    <p>You can call us on <b>+1234568000</b></p>
+                    <br>
+                    <br>
+                    <p>Best Regards, <b><span style="color: red;">Product-Investo</span></b>Team</p>
+                `
+            );
+        }
+        return res.status(statusCode.CREATED).json({
+            message: 'Please check your mail to verify your account',
+        });
+    } catch (error) {
+        console.log('Error from requesting for a new verification link >>>> ', error);
+        return next(error);
+    }
+};
+
+
+const login = async (req, res, next) => {
+    let err;
     const { email, password } = req.body;
     try {
         const user = await User.findOne({ email });
         if (!user) {
-            return res.status(statusCode.NOT_FOUND).json({
-                status: `${statusCode.NOT_FOUND} Error`,
-                message: 'Ensure you enter the right credentials'
-            });
+            err = new ErrorHelper(404, "not found", "Ensure you enter the right credentials");
+            return next(err, req, res, next);
         }
         if (!user.isVerified) {
-            return res.status(statusCode.UNAUTHORIZED).json({
-                status: `${statusCode.UNAUTHORIZED} Error`,
-                message: 'You have to verify your account'
-            });
+            err = new ErrorHelper(statusCode.UNAUTHORIZED, "fail", "You have to verify your account");
+            return next(err, req, res, next);
         }
-        const isValid = await bcrypt.compare(password, user.password);
+        if (user.status === 'inactive') {
+            err = new ErrorHelper(403, "failed", "You Have been deactivated, Please contact an admin");
+            return next(err, req, res, next);
+        }
+        const isValid = authHelper.comparePassword(password, user.password);
         if (!isValid) {
-            return res.status(statusCode.FORBIDDEN).json({
-                message: 'Ensure you enter the right credentials',
-            });
+            err = new ErrorHelper(statusCode.FORBIDDEN, "failed", "Ensure you enter the right credentials");
+            return next(err, req, res, next);
         }
-        const token = jwt.sign(
-            {
-                email: user.email,
-                userId: user._id,
-                role: user.role,
-            },
-            config.JWT_SECRET,
-            {
-                expiresIn: '1d'
-            }
-        );
+        const token = authHelper.generateToken({ userId: user._id }, '1d');
         return res.status(statusCode.OK).json({
-            status: `${statusCode.OK} Success`,
             message: "User signed in successfully",
             user,
-            token
+            token,
         });
     } catch (error) {
         console.log('Error from user sign in >>>> ', error);
-        return res.status(statusCode.INTERNAL_SERVER_ERROR).json({
-            status: `${statusCode.INTERNAL_SERVER_ERROR} Error`,
-            message: 'Something went wrong. Please Try again.',
-        });
+        return next(error);
     }
 };
 
-exports.forgotPassword = async (req, res) => {
+const logout = async (req, res, next) => {
+    try {
+        const { authorization } = req.headers, { _id } = req.user;
+        let token = authorization;
+        if (token.startsWith('Bearer ')) {
+            token = token.split(' ')[1];
+        }
+        await BlackListedToken.create({
+            token, 
+            userId: _id, 
+        });
+        console.log(token);
+        return res.status(200).json({
+            message: 'Successfully logged out', 
+        });
+    } catch (err) {
+        console.log('Error from user sign out >>>> ', err);
+        return next(err);
+    }
+};
+
+const forgotPassword = async (req, res, next) => {
+    let err;
     try {
         const { email } = req.body;
-        const buffer = crypto.randomBytes(32);
-        const token = buffer.toString();
-        const expirationTime = Date.now() + 3600000; // 1 hour
-        const user = await User.findOneAndUpdate(
-            {
-                email
-            },
-            {
-                resetToken: token,
-                expireToken: expirationTime
-            },
-            {
-                new: true
-            }
-        );
-        if (!user){
-            return res.status(statusCode.NOT_FOUND).json({
-                status: `${statusCode.NOT_FOUND} Error`,
-                message: `Sorry an Account with Email: ${email} doesn't exist`
-            });
-        }
-        const resetUrl = `http://${req.headers.host}/api/v1/auth/reset-password/${token}`;
-        sendMail(
-            'no-reply@product-investo.com',
-            user.email,
-            'PASSWORD RESET',
-            `   
-                <p>Hello ${user.fullName}, </p>
-                <p>There was a request to reset your password</p>
-                <p>Please click on the button below to get a new password</p>
-                <a href='${resetUrl}'><button>Reset Password</button></a>
-                <br>
-                <p>If you did not make this request, just ignore this mail as nothing has changed.</p>
-                <br>
-                <p>For more enquiries, contact us via this <a href="mailto: ${config.EMAIL_ADDRESS}">account</a></p>
-                <p>You can call us on <b>+1234568000</b></p>
-                <br>
-                <br>
-                <p>Best Regards, <b><span style="color: red;">Product-Investo</span></b>Team</p>
-            `
-        );
+        const user = await User.findOne({ email });
+		if (!user || !user.isVerified) {
+            err = new ErrorHelper(404, "failed", "The email that you provided is not registered or has not been activated");
+            return next(err, req, res, next);
+		}
+        const token = authHelper.generateToken({ userId: user._id }, '1d');
+        const resetUrl = `http:\/\/${req.headers.host}\/api\/v1\/auth\/reset-password?token=${token}`;
+        if (process.env.NODE_ENV !== 'test') {
+            sendMail(
+                'no-reply@product-investo.com',
+                user.email,
+                'PASSWORD RESET',
+                `   
+                    <p>Hello ${user.lastName} ${user.firstName} , </p>
+                    <p>There was a request to reset your password</p>
+                    <p>Please click on the button below to get a new password</p>
+                    <a href='${resetUrl}'><button>Reset Password</button></a>
+                    <br>
+                    <p>If you did not make this request, just ignore this mail as nothing has changed.</p>
+                    <br>
+                    <p>For more enquiries, contact us via this <a href="mailto: ${config.EMAIL_ADDRESS}">account</a></p>
+                    <p>You can call us on <b>+1234568000</b></p>
+                    <br>
+                    <br>
+                    <p>Best Regards, <b><span style="color: red;">Product-Investo</span></b>Team</p>
+                `
+            );    
+        } 
         return res.status(statusCode.OK).json({
             status: `${statusCode.OK} Success`,
-            message: `A password reset link has been sent to ${user.email}`
+            message: `A password reset link has been sent to ${user.email}`,
         });
     } catch (error) {
         console.log('Error from user forget password >>>> ', error);
-        return res.status(statusCode.INTERNAL_SERVER_ERROR).json({
-            status: `${statusCode.INTERNAL_SERVER_ERROR} Error`,
-            message: 'Something went wrong. Please Try again.',
-        });
+        return next(error);
     }
 };
 
-exports.resetPassword = async (req, res) => {
+const resetPassword = async (req, res, next) => {
+    let err;
     try {
-        const { token } = req.params;
-        const { password } = req.body;
-        const hashedPw = await bcrypt.hash(password, 10);
-        const user = await User.findOneAndUpdate(
-            { 
-                resetToken: token, 
-                expireToken: { 
-                    $gt: Date.now() 
-                }
-            },
-            {
-                password: hashedPw,
-                expireToken: null,
-                resetToken: null
-            },
-            {
-                new: true
-            }
-        );
-        if (!user) {
-            return res.status(statusCode.NOT_FOUND).json({
-                status: `${statusCode.NOT_FOUND} Error`,
-                message: 'Password reset token is invalid or has expired.'
-            });
+        const { token } = req.query;
+        const { password, confirmPassword } = req.body;
+        const genericWordsArray = ['Password123', 'Qwerty123', 'Password', 123];
+        const genericWord = genericWordsArray.find(word => password.includes(word));
+        if (genericWord) {
+            err = new ErrorHelper(422, "failed", "Do not use a common word as the password");
+            return next(err, req, res, next);
         }
-        sendMail(
-            'no-reply@product-investo.com',
-            user.email,
-            'PASSWORD RESET SUCCESSFUL',
-            `   
-                <p>Hello ${user.fullName}, </p>
-                <p>Your request to update your password was successful</p>
-                <br>
-                <p>If you did not make this request, contact us via this <a href="mailto: ${config.EMAIL_ADDRESS}">account</a></p>
-                <p>You can call us on <b>+1234568000</b></p>
-                <br>
-                <br>
-                <p>Best Regards, <b><span style="color: red;">Product-Investo</span></b>Team</p>
-            `
-        );
+        if (password !== confirmPassword) {
+            err = new ErrorHelper(422, "failed", "Password doesn\'t match, Please check you are entering the right thing!");
+            return next(err, req, res, next);
+        }
+        const { userId } = authHelper.verifyToken(token);
+        const hashedPassword = authHelper.hashPassword(password);
+		const user = await User.findOneAndUpdate(
+			{ _id: userId },
+			{ $set: { password: hashedPassword } }
+		);
+        if (!user) {
+            err = new ErrorHelper(404, "failed", "Password reset token is invalid or has expired.");
+            return next(err, req, res, next);
+        }
+        if (process.env.NODE_ENV !== 'test') {
+            sendMail(
+                'no-reply@product-investo.com',
+                user.email,
+                'PASSWORD RESET SUCCESSFUL',
+                `   
+                    <p>Hello ${user.lastName} ${user.firstName}, </p>
+                    <p>Your request to update your password was successful</p>
+                    <br>
+                    <p>If you did not make this request, contact us via this <a href="mailto: ${config.EMAIL_ADDRESS}">account</a></p>
+                    <p>You can call us on <b>+1234568000</b></p>
+                    <br>
+                    <br>
+                    <p>Best Regards, <b><span style="color: red;">Product-Investo</span></b>Team</p>
+                `
+            );    
+        }
         return res.status(statusCode.OK).json({
-            ststus: `${statusCode.OK} Success`,
-            message: 'Password updated successfully. You may login'
-        });
-        // user.resetToken = null;
-        // user.expireToken = null;
-        // user.password = hashedPw;
-        // const savedUser = await user.save();
-        
+            status: `${statusCode.OK} Success`,
+            message: 'Password updated successfully. You may login',
+        });        
     } catch (error) {
         console.log('Error from user reset password >>>> ', error);
-        return res.status(statusCode.INTERNAL_SERVER_ERROR).json({
-            status: `${statusCode.INTERNAL_SERVER_ERROR} Error`,
-            message: 'Something went wrong. Please Try again.',
-        });
+        return next(error);
     }
 };
 
-exports.changePassword = async (req, res) => {
+const changePassword = async (req, res, next) => {
     try {
-        const { oldPassword, newPassword } = req.body;
-        const { email, userId } = req.user;
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(statusCode.UNAUTHORIZED).json({
-                message: 'Make sure you\'re logged in'
-            });
-        }
-        const isPasswordMatched = await bcrypt.compare(oldPassword, user.password);
+        let err;
+        const { oldPassword, newPassword, confirmPassword } = req.body;
+        const { password, _id } = req.user;
+        const isPasswordMatched = authHelper.comparePassword(
+			oldPassword,
+			password
+        );
         if (!isPasswordMatched) {
-            return res.status(statusCode.NOT_ACCEPTABLE).json({
-                message: 'Ensure you enter the right credentials'
-            });
+            err = new ErrorHelper(401, "failed", "Ensure you enter the right credentials");
+            return next(err, req, res, next);
         }
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
-        user.password = hashedPassword;
-        const updatedUser = await user.save();
+		const hashedPassword = authHelper.hashPassword(newPassword);
+		const user = await User.findOneAndUpdate(
+			{ _id },
+			{ $set: { password: hashedPassword } }
+        );
+        if (!user) {
+            err = new ErrorHelper(404, "not found", "User does not exist");
+            return next(err, req, res, next);
+		}
         return res.status(statusCode.OK).json({
             message: 'Password update was successful',
-            data: updatedUser
+            data: user,
         });
     } catch (error) {
         console.log('Error from changing user password >>>> ', error);
-        return res.status(statusCode.INTERNAL_SERVER_ERROR).json({
-            status: `${statusCode.INTERNAL_SERVER_ERROR} Error`,
-            message: 'Something went wrong. Please Try again.',
-        });
+        return next(error);
     }
+};
+
+module.exports = {
+    register,
+    activateAccount,
+    login,
+    logout,
+    resetPassword,
+    changePassword,
+    forgotPassword,
+    resendVerifyUrl,
 };

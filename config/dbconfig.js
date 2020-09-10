@@ -1,9 +1,8 @@
 const mongoose = require('mongoose');
 const config = require('./index');
 
-const mongoDbUrl = config.MONGODBURI;
+const mongoDbUrl = config[config.NODE_ENV].MONGODBURI;
 
-//function that handles the database connection
 module.exports = () => {
 	mongoose.connect(mongoDbUrl, {
 		useNewUrlParser: true,
@@ -14,7 +13,7 @@ module.exports = () => {
 
 	mongoose.connection.on('connected', function () {
 		console.log(
-			`Mongoose connection is open... Database connected successfully!`
+			`Mongoose connection to ${mongoDbUrl} is open... Database connected successfully!`
 		);
 	});
 

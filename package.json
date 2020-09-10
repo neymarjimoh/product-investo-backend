@@ -4,7 +4,7 @@
   "description": "An application that connects users with investors",
   "main": "index.js",
   "scripts": {
-    "test": "mocha --timeout 5000",
+    "test": "cross-env NODE_ENV=test mocha test/**/*.js --timeout 10000 --exit",
     "start": "node index.js",
     "dev": "nodemon index.js"
   },
@@ -30,23 +30,28 @@
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "crypto-random-string": "^3.2.0",
+    "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "express-validator": "^6.5.0",
+    "gravatar": "^1.8.1",
     "helmet": "^3.22.0",
     "http-status": "^1.4.2",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.9.13",
     "mongoose-intl-phone-number": "^1.1.1",
+    "mongoose-slug-plugin": "^2.0.3",
     "morgan": "^1.10.0",
     "multer": "^1.4.2",
     "nodemailer": "^6.4.8",
+    "slugify": "^1.4.5",
+    "sinon": "^9.0.2",
     "swagger-ui-express": "^4.1.4",
     "yamljs": "^0.3.0"
   },
   "devDependencies": {
     "chai": "^4.2.0",
     "chai-http": "^4.3.0",
-    "dotenv": "^8.2.0",
+    "cross-env": "^7.0.2",
     "mocha": "^7.2.0",
     "nodemon": "^2.0.4"
   },
