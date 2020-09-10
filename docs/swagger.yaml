@@ -316,17 +316,10 @@ paths:
                 - userType
               properties:
                 firstName:
-<<<<<<< HEAD
                   type: String
                   example: John
                 lastName:
                   type: String
-=======
-                  type: String
-                  example: John
-                lastName:
-                  type: String
->>>>>>> 05ad5452b3cd067d675b85a6416a2a107ef5016f
                   example: Doe
                 email:
                   type: String
