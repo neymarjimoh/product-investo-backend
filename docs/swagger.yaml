@@ -18,6 +18,7 @@ servers:
           - 'http'
           - 'https'
         default: 'http'
+        
       host:
         enum:
           - '127.0.0.1'
