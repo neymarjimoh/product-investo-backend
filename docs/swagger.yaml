@@ -203,7 +203,11 @@ components:
         amountNeeded:
           type: Number
           example: 200,000
+        productOwner:
+          type: object
+          $ref: "#/components/schemas/User"
         investors:
+          type: array
           $ref: "#/components/schemas/User"
     Investment:
       type: object
