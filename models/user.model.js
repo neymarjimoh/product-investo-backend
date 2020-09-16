@@ -9,6 +9,12 @@ const userSchema = new Schema(
             unique: true,
             trim: true,
         },
+        googleId: {
+            type: String,
+        },
+        facebookId: {
+            type: String,
+        },
         firstName: {
             type: String,
             required: true,
@@ -19,7 +25,6 @@ const userSchema = new Schema(
         },
         password: {
             type: String,
-            required: true,
         },
         role: {
             type: String,

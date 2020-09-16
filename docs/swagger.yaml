@@ -109,6 +109,12 @@ components:
         lastName:
           type: String
           example: Doe
+        googleId:
+          type: String
+          format: A unique google ID
+        facebookId:
+          type: String
+          format: a unique fB ID
         email:
           type: String
           example: testUsername@gmail.com
@@ -418,6 +424,30 @@ paths:
         500:
           description: Something went wrong, please try again or check back for a fix
   
+  /api/v1/auth/google:
+    get:
+      summary: authenticates user using google oauth
+      description: authenticate users into the system
+      tags:
+        - Users
+      responses:
+        200:
+          description: User signed in successfully
+        500:
+          description: Something went wrong, please try again or check back for a fix
+  
+  /api/v1/auth/facebook:
+    get:
+      summary: authenticates user using facebook oauth
+      description: authenticate users into the system
+      tags:
+        - Users
+      responses:
+        200:
+          description: User signed in successfully
+        500:
+          description: Something went wrong, please try again or check back for a fix
+          
   /api/v1/auth/forgot-password:
     post:
       summary: Password Recovery Request
