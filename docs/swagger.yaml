@@ -18,6 +18,7 @@ servers:
           - 'http'
           - 'https'
         default: 'http'
+        
       host:
         enum:
           - '127.0.0.1'
@@ -124,6 +125,13 @@ components:
         password:
           type: String
           example: AveryStrongPassword
+        passwordConfirmation:
+          type: String
+          example: AveryStrongPassword
+        phoneNumber:
+          type: String
+          example: +2348049080007
+          format: Contry-Code
         isVerified:
           type: Boolean
           example: false

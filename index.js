@@ -34,7 +34,7 @@ app.use(cors());
 app.use(helmet());
 app.use(passport.initialize());
 
-app.use(checkAuth); // use the authentication middleware
+app.use(checkAuth);
 
 app.get('/', (req, res) => {
 	res.send('Server working 🔥');
