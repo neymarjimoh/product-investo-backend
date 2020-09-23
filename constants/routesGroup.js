@@ -11,8 +11,6 @@ module.exports = {
         '/api/v1/auth/forgot-password',
         '/api/v1/auth/reset-password',
     ],
-    // the secure routes will be much depending on app scope
-    // only logged in users can access this endpoints/routes
     secureRoutes: [
         '/api/v1/auth/change-password',
         '/api/v1/users',

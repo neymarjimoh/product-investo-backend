@@ -32,7 +32,7 @@ app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
 app.use(cors());
 app.use(helmet());
 
-app.use(checkAuth); // use the authentication middleware
+app.use(checkAuth);
 
 app.get('/', (req, res) => {
 	res.send('Server working 🔥');
