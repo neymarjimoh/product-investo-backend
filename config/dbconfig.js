@@ -3,7 +3,6 @@ const config = require('./index');
 
 const mongoDbUrl = config[config.NODE_ENV].MONGODBURI;
 
-//function that handles the database connection
 module.exports = () => {
 	mongoose.connect(mongoDbUrl, {
 		useNewUrlParser: true,
