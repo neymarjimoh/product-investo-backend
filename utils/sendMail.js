@@ -14,7 +14,6 @@ const transporter = nodemailer.createTransport({
 });
 
 module.exports = (from, to, subject, msg) => {
-  console.log("33333333");
     const mailOptions = {
       from,
       to,

@@ -6,6 +6,7 @@ const helmet = require('helmet');
 const path = require('path');
 const YAML = require('yamljs');
 const swaggerUi = require('swagger-ui-express');
+const passport = require('passport');
 
 const config = require('./config');
 const mongoDbConnection = require('./config/dbconfig');
@@ -31,6 +32,7 @@ app.use(upload.single('image'));
 app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
 app.use(cors());
 app.use(helmet());
+app.use(passport.initialize());
 
 app.use(checkAuth);
 
